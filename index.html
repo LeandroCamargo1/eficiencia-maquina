@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Produção Diária - Hokkaido Plastics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Adiciona a biblioteca do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @media print {
+            body * { visibility: hidden; }
+            .print-section, .print-section * { visibility: visible; }
+            .print-section { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-header { display: block !important; }
+            table { font-size: 10px; }
+        }
+        .slide-down { animation: slide-down 0.5s ease-out forwards; }
+        @keyframes slide-down {
+            from { opacity: 0; transform: translateY(-100%); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans">
+
+    <!-- Indicador de Status de Conexão -->
+    <div id="connection-status" class="bg-gray-800 text-white p-2 text-center fixed top-0 w-full z-50 shadow-lg no-print flex justify-center items-center gap-2">
+        <i data-lucide="loader" class="animate-spin w-4 h-4"></i>
+        <span>Conectando ao banco de dados...</span>
+    </div>
+
+    <div class="container mx-auto p-4 md:p-6 lg:p-8 mt-12">
+        
+        <!-- Cabeçalho Principal -->
+        <header class="text-center mb-6 no-print">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Dashboard de Produção Diária</h1>
+            <p class="text-lg text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
+        </header>
+        
+        <!-- Controles da Página (Data e Status) -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-md no-print">
+            <div class="flex items-center gap-2 mb-2 md:mb-0">
+                <label for="date-selector" class="font-semibold text-slate-700">Visualizar Dia:</label>
+                <input type="date" id="date-selector" class="border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-cyan-500">
+            </div>
+             <div id="save-status" class="text-sm text-slate-500 font-medium h-6 flex items-center">
+                <!-- Status de salvamento (Ex: Salvo) -->
+            </div>
+        </div>
+
+        <!-- Layout Principal com 3 seções -->
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-6 no-print">
+
+            <!-- Parte 1: Planejamento do Dia -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="text-cyan-600"></i>Planejamento do Dia</h2>
+                <form id="planning-form" class="space-y-4">
+                    <div>
+                        <label for="machine" class="block text-sm font-medium text-slate-700">Máquina</label>
+                        <select id="machine" name="machine" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"></select>
+                    </div>
+                    <div>
+                        <label for="product" class="block text-sm font-medium text-slate-700">Produto</label>
+                        <input type="text" id="product" name="product" required placeholder="Ex: Tampa Flip Top 28mm" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label for="budgeted_cycle" class="block text-sm font-medium text-slate-700">Ciclo (s)</label>
+                            <input type="number" id="budgeted_cycle" name="budgeted_cycle" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                        </div>
+                        <div>
+                            <label for="mold_cavities" class="block text-sm font-medium text-slate-700">Cavidades</label>
+                            <input type="number" id="mold_cavities" name="mold_cavities" required min="1" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                        </div>
+                        <div>
+                            <label for="piece_weight" class="block text-sm font-medium text-slate-700">Peso Peça (g)</label>
+                            <input type="number" id="piece_weight" name="piece_weight" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle"></i> Adicionar ao Planejamento
+                    </button>
+                </form>
+                <hr class="my-6">
+                <h3 class="text-lg font-semibold mb-3">Itens Planejados</h3>
+                <div id="planning-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+            </div>
+
+            <!-- Parte 2: Painel de Lançamento -->
+            <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="play-square" class="text-cyan-600"></i>Painel de Lançamento</h2>
+                <div id="launch-panel" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2"></div>
+            </div>
+        </main>
+        
+        <!-- Parte 3: Resumo da Produção (Relatório) -->
+        <section class="mt-8 bg-white p-6 rounded-lg shadow-lg print-section">
+             <div class="print-header hidden mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h2>
+                <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
+                <p id="report-date" class="text-md text-slate-600 font-medium"></p>
+             </div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i>Resumo da Produção</h2>
+                <button id="print-report-btn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 no-print">
+                    <i data-lucide="printer"></i> Imprimir Relatório
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="summary-table" class="w-full text-sm text-left text-slate-500">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-200">
+                        <tr>
+                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Máquina</th>
+                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Produto</th>
+                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300">Planejado</th>
+                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300 bg-sky-100">1º Turno</th>
+                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300 bg-amber-100">2º Turno</th>
+                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300 bg-indigo-100">3º Turno</th>
+                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300 bg-slate-300">Total Dia</th>
+                        </tr>
+                        <tr>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Cav.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Peso (g)</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Qtd.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Qtd.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Qtd.</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modais (Lançamento e Confirmação) -->
+    <div id="turno-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 no-print">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold" id="modal-title">Lançar Dados do Turno</h3>
+                <button id="close-modal-btn" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="turno-form">
+                <input type="hidden" id="modal-item-id">
+                <input type="hidden" id="modal-turno">
+                <div class="space-y-4">
+                    <div>
+                        <label for="real-cycle" class="block text-sm font-medium text-slate-700">Ciclo Real (s) <span class="text-red-500">*</span></label>
+                        <input type="number" id="real-cycle" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label for="real-cavities" class="block text-sm font-medium text-slate-700">Cavidades Reais <span class="text-red-500">*</span></label>
+                        <input type="number" id="real-cavities" required min="1" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label for="produced-qty" class="block text-sm font-medium text-slate-700">Quantidade Produzida (Opcional)</label>
+                        <input type="number" id="produced-qty" min="0" step="1" placeholder="Ex: 5000" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" id="cancel-modal-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg">Salvar Dados</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 no-print">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+            <div class="flex justify-center mb-4"><i data-lucide="alert-triangle" class="w-12 h-12 text-amber-500"></i></div>
+            <h3 class="text-lg font-bold mb-2">Você tem certeza?</h3>
+            <p id="confirm-modal-body" class="mb-6 text-slate-600">Esta ação não pode ser desfeita.</p>
+            <div class="flex justify-center gap-3">
+                <button id="confirm-cancel-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                <button id="confirm-ok-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Sim, continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIGURAÇÃO DO SUPABASE ---
+        const SUPABASE_URL = 'https://hrukbkrzmabdrjyvpmff.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydWtia3J6bWFiZHJqeXZwbWZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzI3OTEsImV4cCI6MjA3NTAwODc5MX0.Auiqvoq-w8EKLvc-KVysAk697uI2o-lEK8zh2cU7LKI';
+
+        const { createClient } = supabase;
+        let dbClient; 
+
+        // --- ELEMENTOS DO DOM ---
+        const machineSelect = document.getElementById('machine');
+        const planningForm = document.getElementById('planning-form');
+        const planningList = document.getElementById('planning-list');
+        const launchPanel = document.getElementById('launch-panel');
+        const summaryTableBody = document.querySelector('#summary-table tbody');
+        const dateSelector = document.getElementById('date-selector');
+        const saveStatus = document.getElementById('save-status');
+        const connectionStatus = document.getElementById('connection-status');
+        
+        // Modais
+        const turnoModal = document.getElementById('turno-modal');
+        const turnoForm = document.getElementById('turno-form');
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmModalBody = document.getElementById('confirm-modal-body');
+
+        // --- ESTADO DA APLICAÇÃO ---
+        let appData = { planning: [] };
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let confirmCallback = null;
+        let saveTimeout;
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO ---
+        const renderAll = () => {
+            renderPlanningList();
+            renderLaunchPanel();
+            renderSummaryTable();
+        };
+
+        const renderPlanningList = () => {
+            planningList.innerHTML = appData.planning.length === 0 
+                ? `<p class="text-slate-500 text-sm">Nenhum item planejado.</p>`
+                : appData.planning.map(item => `
+                    <div class="flex justify-between items-center bg-slate-100 p-2 rounded">
+                        <div class="truncate pr-2">
+                            <span class="font-semibold">${item.machine}</span> - <span title="${item.product}">${item.product}</span>
+                        </div>
+                        <button class="remove-item-btn text-red-500 hover:text-red-700 flex-shrink-0" data-id="${item.id}">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>`).join('');
+            lucide.createIcons();
+        };
+
+        const renderLaunchPanel = () => {
+            launchPanel.innerHTML = appData.planning.length === 0
+                ? `<div class="col-span-full text-center text-slate-500"><p>Adicione itens no planejamento para começar.</p></div>`
+                : appData.planning.map(item => {
+                    const turnoBtn = (turnoNum) => {
+                        const turnoData = item.turnos?.[turnoNum];
+                        const done = turnoData && turnoData.realCycle;
+                        return `<button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded flex items-center justify-center ${done ? 'bg-green-600' : 'bg-cyan-600'}" data-id="${item.id}" data-turno="${turnoNum}">
+                                    ${done ? '<i data-lucide="check" class="w-4 h-4 mr-1"></i>' : ''} ${turnoNum}º Turno
+                                </button>`;
+                    };
+                    return `<div class="bg-slate-50 border border-slate-200 p-4 rounded-lg shadow">
+                                <h4 class="font-bold text-lg">${item.machine}</h4>
+                                <p class="text-slate-600 mb-3 truncate" title="${item.product}">${item.product}</p>
+                                <div class="grid grid-cols-3 gap-2">${turnoBtn(1)}${turnoBtn(2)}${turnoBtn(3)}</div>
+                            </div>`;
+                }).join('');
+            lucide.createIcons();
+        };
+
+        const renderSummaryTable = () => {
+            summaryTableBody.innerHTML = appData.planning.length === 0
+                ? `<tr><td colspan="15" class="text-center p-4 text-slate-500">Nenhum dado para exibir.</td></tr>`
+                : appData.planning.map(item => {
+                    const t = [1, 2, 3].map(n => item.turnos?.[n] || {});
+                    const totalQty = t.reduce((sum, turno) => sum + (turno.qty || 0), 0);
+                    const cycleClass = (rc, bc) => rc && parseFloat(rc) > parseFloat(bc) ? 'text-red-600 font-bold' : '';
+                    
+                    return `
+                        <tr class="bg-white border-b">
+                            <td class="px-4 py-2 border font-medium">${item.machine}</td>
+                            <td class="px-4 py-2 border">${item.product}</td>
+                            <td class="px-2 py-2 text-center border">${item.budgeted_cycle}</td>
+                            <td class="px-2 py-2 text-center border">${item.mold_cavities}</td>
+                            <td class="px-2 py-2 text-center border">${item.piece_weight}</td>
+                            ${t.map(turno => `
+                                <td class="px-2 py-2 text-center border ${cycleClass(turno.realCycle, item.budgeted_cycle)}">${turno.realCycle || '-'}</td>
+                                <td class="px-2 py-2 text-center border">${turno.realCavities || '-'}</td>
+                                <td class="px-2 py-2 text-center border">${turno.qty || '-'}</td>
+                            `).join('')}
+                            <td class="px-4 py-2 border font-bold bg-slate-100 text-center">${totalQty}</td>
+                        </tr>`;
+                }).join('');
+        };
+
+        // --- LÓGICA DE DADOS (Supabase) ---
+        const loadData = async (date) => {
+            const { data, error } = await dbClient
+                .from('production_plan')
+                .select('*')
+                .eq('date', date);
+            
+            if (error) {
+                console.error('Erro ao carregar dados:', error);
+                showStatus('Erro de conexão', 'red', 'wifi-off');
+                return;
+            }
+            appData.planning = data;
+            renderAll();
+        };
+        
+        const showStatus = (text, color = 'green', icon = 'check-circle-2') => {
+            clearTimeout(saveTimeout);
+            saveStatus.innerHTML = `<div class="flex items-center gap-1 text-${color}-600"><i data-lucide="${icon}" class="w-4 h-4"></i> ${text}</div>`;
+            lucide.createIcons();
+            saveTimeout = setTimeout(() => saveStatus.innerHTML = '', 3000);
+        };
+
+        // --- LÓGICA DOS MODAIS ---
+        const showConfirm = (message, onConfirm) => {
+            confirmModalBody.textContent = message;
+            confirmCallback = onConfirm;
+            confirmModal.classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        const hideConfirm = () => {
+            confirmModal.classList.add('hidden');
+            confirmCallback = null;
+        };
+
+        const openTurnoModal = (id, turno) => {
+            const item = appData.planning.find(p => p.id === id);
+            if (!item) return;
+            document.getElementById('modal-title').textContent = `Lançar Dados - ${item.machine} (${turno}º Turno)`;
+            document.getElementById('modal-item-id').value = id;
+            document.getElementById('modal-turno').value = turno;
+            const turnoData = item.turnos?.[turno] || {};
+            turnoForm.elements['real-cycle'].value = turnoData.realCycle || '';
+            turnoForm.elements['real-cavities'].value = turnoData.realCavities || item.mold_cavities;
+            turnoForm.elements['produced-qty'].value = turnoData.qty || '';
+            turnoModal.classList.remove('hidden');
+        };
+
+        const closeTurnoModal = () => {
+            turnoModal.classList.add('hidden');
+            turnoForm.reset();
+        };
+
+        // --- HANDLERS DE EVENTOS ---
+        planningForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(planningForm);
+            const newItem = {
+                date: selectedDate,
+                machine: formData.get('machine'),
+                product: formData.get('product'),
+                budgeted_cycle: parseFloat(formData.get('budgeted_cycle')),
+                mold_cavities: parseInt(formData.get('mold_cavities')),
+                piece_weight: parseFloat(formData.get('piece_weight')),
+            };
+
+            const { error } = await dbClient.from('production_plan').insert([newItem]);
+            if (error) {
+                console.error("Erro ao adicionar item:", error);
+                showStatus('Erro ao salvar', 'red', 'alert-circle');
+            } else {
+                planningForm.reset();
+                showStatus('Item adicionado!');
+            }
+        });
+
+        turnoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('modal-item-id').value;
+            const turno = document.getElementById('modal-turno').value;
+            const item = appData.planning.find(p => p.id === id);
+
+            if (item) {
+                const updatedTurnos = { ...item.turnos };
+                updatedTurnos[turno] = {
+                    realCycle: parseFloat(turnoForm.elements['real-cycle'].value),
+                    realCavities: parseInt(turnoForm.elements['real-cavities'].value),
+                    qty: turnoForm.elements['produced-qty'].value ? parseInt(turnoForm.elements['produced-qty'].value) : null
+                };
+
+                const { error } = await dbClient
+                    .from('production_plan')
+                    .update({ turnos: updatedTurnos })
+                    .eq('id', id);
+
+                if (error) {
+                    console.error("Erro ao atualizar turno:", error);
+                    showStatus('Erro ao salvar', 'red', 'alert-circle');
+                } else {
+                    closeTurnoModal();
+                    showStatus('Turno salvo!');
+                }
+            }
+        });
+        
+        document.body.addEventListener('click', async (e) => {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (removeBtn) {
+                const id = removeBtn.dataset.id;
+                showConfirm('Deseja remover este item do planejamento?', async () => {
+                    const { error } = await dbClient.from('production_plan').delete().eq('id', id);
+                    if (error) {
+                        console.error("Erro ao remover item:", error);
+                        showStatus('Erro ao remover', 'red', 'alert-circle');
+                    } else {
+                        showStatus('Item removido!');
+                    }
+                });
+            }
+            if (e.target.closest('.turno-btn')) {
+                const btn = e.target.closest('.turno-btn');
+                openTurnoModal(btn.dataset.id, btn.dataset.turno);
+            }
+        });
+
+        dateSelector.addEventListener('change', (e) => {
+            selectedDate = e.target.value;
+            loadData(selectedDate);
+        });
+
+        // Eventos dos modais
+        document.getElementById('close-modal-btn').addEventListener('click', closeTurnoModal);
+        document.getElementById('cancel-modal-btn').addEventListener('click', closeTurnoModal);
+        document.getElementById('confirm-ok-btn').addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            hideConfirm();
+        });
+        document.getElementById('confirm-cancel-btn').addEventListener('click', hideConfirm);
+        document.getElementById('print-report-btn').addEventListener('click', () => {
+             const [year, month, day] = selectedDate.split('-');
+             document.getElementById('report-date').textContent = `Data: ${day}/${month}/${year}`;
+             window.print();
+        });
+
+        // --- INICIALIZAÇÃO E REALTIME ---
+        const initializeApp = async () => {
+            if (SUPABASE_URL === 'COLE_SUA_URL_AQUI' || SUPABASE_KEY === 'COLE_SUA_CHAVE_ANON_AQUI') {
+                document.body.innerHTML = `<div class="p-8 text-center bg-red-100 text-red-800">
+                    <h1 class="text-2xl font-bold">Configuração Necessária</h1>
+                    <p class="mt-2">Por favor, insira sua URL e Chave do Supabase no arquivo index.html para continuar.</p>
+                    </div>`;
+                return;
+            }
+
+            // Inicializa o cliente do Supabase APÓS a verificação
+            dbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            dateSelector.value = selectedDate;
+            for (let i = 1; i <= 32; i++) {
+                machineSelect.innerHTML += `<option value="H-${String(i).padStart(2, '0')}">H-${String(i).padStart(2, '0')}</option>`;
+            }
+            
+            await loadData(selectedDate);
+            lucide.createIcons();
+
+            // Listener de Realtime
+            const channel = dbClient.channel('public:production_plan')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'production_plan' }, payload => {
+                    console.log('Mudança recebida!', payload);
+                    // Apenas recarrega os dados do dia selecionado se a mudança for relevante
+                    if (payload.new?.date === selectedDate || payload.old?.date === selectedDate) {
+                        loadData(selectedDate);
+                    }
+                })
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        connectionStatus.innerHTML = `<i data-lucide="wifi" class="text-green-400 w-4 h-4"></i> <span>Conectado em tempo real</span>`;
+                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                         connectionStatus.innerHTML = `<i data-lucide="wifi-off" class="text-red-400 w-4 h-4"></i> <span>Desconectado</span>`;
+                    }
+                    lucide.createIcons();
+                });
+        };
+
+        initializeApp();
+    });
+    </script>
+</body>
+</html>
+
