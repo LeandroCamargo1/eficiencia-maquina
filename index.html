@@ -191,8 +191,8 @@
                 <button id="close-modal-btn" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <form id="turno-form">
-                <input type="hidden" id="modal-item-id">
-                <input type="hidden" id="modal-turno">
+                <input type="hidden" id="modal-item-id" name="modal-item-id">
+                <input type="hidden" id="modal-turno" name="modal-turno">
                 <div class="space-y-4">
                     <div>
                         <label for="real-cycle" class="block text-sm font-medium text-slate-700">Ciclo Real (s)</label>
@@ -283,9 +283,12 @@
                 renderAll();
                 saveStatus.textContent = '';
             } catch (error) {
-                console.error("Erro ao carregar dados:", error);
+                const userMessage = "Falha ao carregar os dados. Verifique a sua conexão ou tente atualizar a página.";
+                const technicalDetails = error.message || JSON.stringify(error);
+                console.error("ERRO DETALHADO AO CARREGAR:", error);
                 saveStatus.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4 text-red-600 mr-1"></i> Erro ao carregar!`;
                 lucide.createIcons();
+                alert(`${userMessage}\n\nDetalhes técnicos para o suporte: ${technicalDetails}`);
             }
         }
 
@@ -305,10 +308,12 @@
                     lucide.createIcons();
                 }, 500);
             } catch (error) {
+                const userMessage = "Ocorreu um erro ao salvar os dados. A alteração pode não ter sido registada.";
+                const technicalDetails = error.message || JSON.stringify(error);
                 console.error("ERRO DETALHADO AO SALVAR:", error);
                 saveStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 mr-1"></i> Falha ao salvar!`;
                 lucide.createIcons();
-                alert("Ocorreu um erro ao salvar os dados. Verifique a consola para mais detalhes (pressione F12).");
+                alert(`${userMessage}\n\nDetalhes técnicos para o suporte: ${technicalDetails}`);
             } finally {
                  if(btn) btn.disabled = false;
             }
@@ -322,10 +327,12 @@
                 const { error } = await supabaseClient.from('production_plan').delete().eq('id', id);
                 if (error) throw error;
             } catch (error) {
+                const userMessage = "Ocorreu um erro ao remover o item.";
+                const technicalDetails = error.message || JSON.stringify(error);
                 console.error("ERRO DETALHADO AO REMOVER:", error);
                 saveStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 mr-1"></i> Falha ao remover!`;
                 lucide.createIcons();
-                alert("Ocorreu um erro ao remover o item. Verifique a consola para mais detalhes (pressione F12).");
+                alert(`${userMessage}\n\nDetalhes técnicos para o suporte: ${technicalDetails}`);
             }
         }
 
@@ -386,11 +393,10 @@
             const sortedData = getSortedPlanning();
             sortedData.forEach(item => {
                 const card = document.createElement('div');
-                // CORREÇÃO DEFENSIVA: Garante que `item.turnos` seja um objeto para evitar erros
                 const turnos = item.turnos || {};
                 card.className = 'bg-slate-50 border border-slate-200 p-4 rounded-lg shadow';
-                const turnoBtnClass = (turnoData) => turnoData?.realCycle ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700';
-                const turnoIcon = (turnoData) => turnoData?.realCycle ? '<i data-lucide="check" class="w-4 h-4 mr-1"></i>' : '';
+                const turnoBtnClass = (turnoData) => turnoData && turnoData.realCycle ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700';
+                const turnoIcon = (turnoData) => turnoData && turnoData.realCycle ? '<i data-lucide="check" class="w-4 h-4 mr-1"></i>' : '';
                 card.innerHTML = `<h4 class="font-bold text-lg">${item.machine}</h4>
                                   <p class="text-slate-600 mb-3 truncate" title="${item.product}">${item.product}</p>
                                   <div class="grid grid-cols-3 gap-2">
@@ -422,7 +428,6 @@
             const sortedData = getSortedPlanning();
             sortedData.forEach(item => {
                 const row = document.createElement('tr');
-                // CORREÇÃO DEFENSIVA: Garante que `item.turnos` seja um objeto para evitar erros
                 const turnos = item.turnos || {};
                 row.className = 'bg-white border-b';
                 
@@ -434,11 +439,11 @@
                     const turnoData = turnos[String(i)];
                     let machineEff = '-';
                     let moldEff = '-';
-                    if(turnoData?.realCycle > 0 && item.budgeted_cycle > 0) {
+                    if(turnoData && turnoData.realCycle > 0 && item.budgeted_cycle > 0) {
                         const calculatedEff = (item.budgeted_cycle / turnoData.realCycle) * 100;
                         machineEff = getEfficiencyHtml(calculatedEff);
                     }
-                    if(turnoData?.realCavities > 0 && item.mold_cavities > 0) {
+                    if(turnoData && turnoData.realCavities > 0 && item.mold_cavities > 0) {
                         const calculatedEff = (turnoData.realCavities / item.mold_cavities) * 100;
                         moldEff = getEfficiencyHtml(calculatedEff);
                     }
@@ -466,18 +471,24 @@
         }
         
         // --- MODAIS ---
-        const { 'modal-item-id': modalItemId, 'modal-turno': modalTurno, 'modal-title': modalTitle } = turnoForm.elements;
+        const modalTitle = document.getElementById('modal-title');
+        const modalItemId = document.getElementById('modal-item-id');
+        const modalTurno = document.getElementById('modal-turno');
+        
         const openModal = (id, turno) => {
             const item = appData.planning.find(p => p.id === id);
-            if (!item) return;
-            // CORREÇÃO DEFENSIVA: Garante que `item.turnos` seja um objeto para evitar erros
+            if (!item) {
+                console.error("Item não encontrado para o ID:", id);
+                return;
+            }
             const turnos = item.turnos || {};
             modalTitle.textContent = `Lançar ${turno}º Turno - ${item.machine}`;
             modalItemId.value = id;
             modalTurno.value = turno;
-            turnoForm.elements['real-cycle'].value = turnos[turno]?.realCycle || '';
-            turnoForm.elements['real-cavities'].value = turnos[turno]?.realCavities || item.mold_cavities;
-            turnoForm.elements['produced-qty'].value = turnos[turno]?.qty || '';
+            const turnoData = turnos[turno] || {};
+            turnoForm.elements['real-cycle'].value = turnoData.realCycle || '';
+            turnoForm.elements['real-cavities'].value = turnoData.realCavities || item.mold_cavities;
+            turnoForm.elements['produced-qty'].value = turnoData.qty || '';
             turnoModal.classList.remove('hidden');
         };
         const closeModal = () => turnoModal.classList.add('hidden');
@@ -521,7 +532,6 @@
             const turno = modalTurno.value;
             const item = appData.planning.find(p => p.id === id);
             if (item) {
-                // CORREÇÃO DEFENSIVA: Garante que o objeto exista antes de atribuir
                 if (!item.turnos) item.turnos = { '1': {}, '2': {}, '3': {} };
                 item.turnos[turno] = {
                     realCycle: parseFloat(turnoForm.elements['real-cycle'].value),
@@ -578,6 +588,18 @@
             }
             lucide.createIcons();
         });
+
+        // Captura global de erros para ajudar no diagnóstico
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("ERRO GLOBAL CAPTURADO:", { message, source, lineno, colno, error });
+            const status = document.getElementById('connection-status');
+            if (status) {
+                status.textContent = 'Ocorreu um erro inesperado!';
+                status.classList.replace('bg-green-600', 'bg-red-600');
+                status.classList.replace('bg-slate-800', 'bg-red-600');
+            }
+            return true;
+        };
     </script>
 </body>
 </html>
