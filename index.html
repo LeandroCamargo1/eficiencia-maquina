@@ -6,58 +6,95 @@
     <title>Dashboard de Produção Diária - Hokkaido Plastics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Adiciona a biblioteca do Supabase -->
+    <!-- SUPABASE CLIENT -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        @media print {
-            body * { visibility: hidden; }
-            .print-section, .print-section * { visibility: visible; }
-            .print-section { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
-            .no-print { display: none !important; }
-            .print-header { display: block !important; }
-            table { font-size: 10px; }
-        }
+        /* Estilos personalizados */
         .slide-down { animation: slide-down 0.5s ease-out forwards; }
         @keyframes slide-down {
             from { opacity: 0; transform: translateY(-100%); }
             to { opacity: 1; transform: translateY(0); }
         }
+        button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 15mm;
+            }
+
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                font-size: 9pt;
+            }
+
+            body * { visibility: hidden; }
+            .print-section, .print-section * { visibility: visible; }
+            .print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print { display: none !important; }
+
+            #summary-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 7pt; /* Fonte ainda mais reduzida para caber tudo */
+            }
+            #summary-table th,
+            #summary-table td {
+                border: 1px solid #ccc;
+                padding: 3px 5px; /* Espaçamento reduzido */
+                word-break: break-word;
+            }
+            #summary-table thead { background-color: #e5e7eb !important; }
+            .bg-sky-100 { background-color: #e0f2fe !important; }
+            .bg-amber-100 { background-color: #fef3c7 !important; }
+            .bg-indigo-100 { background-color: #e0e7ff !important; }
+            .bg-slate-100 { background-color: #f1f5f9 !important; }
+            .bg-slate-200 { background-color: #e2e8f0 !important; }
+            .bg-slate-300 { background-color: #cbd5e1 !important; }
+
+            /* Garante que as cores de texto da eficiência sejam impressas */
+            .text-green-600 { color: #059669 !important; }
+            .text-yellow-600 { color: #ca8a04 !important; }
+            .text-red-600 { color: #dc2626 !important; }
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans">
+<body class="bg-slate-100 text-slate-800">
 
-    <!-- Indicador de Status de Conexão -->
-    <div id="connection-status" class="bg-gray-800 text-white p-2 text-center fixed top-0 w-full z-50 shadow-lg no-print flex justify-center items-center gap-2">
-        <i data-lucide="loader" class="animate-spin w-4 h-4"></i>
-        <span>Conectando ao banco de dados...</span>
+    <div id="connection-status" class="p-2 text-center text-white font-semibold fixed top-0 w-full z-50 transition-colors duration-500 bg-slate-800 no-print">
+        A inicializar...
     </div>
 
-    <div class="container mx-auto p-4 md:p-6 lg:p-8 mt-12">
+    <div class="container mx-auto p-4 md:p-6 lg:p-8 pt-16">
         
-        <!-- Cabeçalho Principal -->
         <header class="text-center mb-6 no-print">
+             <img src="https://hrukbkrzmabdrjyvpmff.supabase.co/storage/v1/object/public/logos/logo.svg" alt="Logo Hokkaido Plastics" class="mx-auto h-16 w-auto mb-4">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Dashboard de Produção Diária</h1>
             <p class="text-lg text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
         </header>
         
-        <!-- Controles da Página (Data e Status) -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-md no-print">
-            <div class="flex items-center gap-2 mb-2 md:mb-0">
-                <label for="date-selector" class="font-semibold text-slate-700">Visualizar Dia:</label>
-                <input type="date" id="date-selector" class="border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-cyan-500">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label for="date-selector" class="font-semibold">Data:</label>
+                    <input type="date" id="date-selector" class="border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <button id="refresh-data-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold p-2 rounded-lg transition-colors flex items-center gap-2" title="Atualizar dados">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
             </div>
-             <div id="save-status" class="text-sm text-slate-500 font-medium h-6 flex items-center">
-                <!-- Status de salvamento (Ex: Salvo) -->
-            </div>
+            <div id="save-status" class="text-sm text-slate-500 font-medium h-6 flex items-center"></div>
         </div>
 
-        <!-- Layout Principal com 3 seções -->
         <main class="grid grid-cols-1 lg:grid-cols-5 gap-6 no-print">
-
-            <!-- Parte 1: Planejamento do Dia -->
             <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="text-cyan-600"></i>Planejamento do Dia</h2>
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="text-cyan-600"></i>Planeamento do Dia</h2>
                 <form id="planning-form" class="space-y-4">
                     <div>
                         <label for="machine" class="block text-sm font-medium text-slate-700">Máquina</label>
@@ -65,44 +102,42 @@
                     </div>
                     <div>
                         <label for="product" class="block text-sm font-medium text-slate-700">Produto</label>
-                        <input type="text" id="product" name="product" required placeholder="Ex: Tampa Flip Top 28mm" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="text" id="product" name="product" required placeholder="Ex: Tampa Flip Top 28mm" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
                     </div>
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="budgeted_cycle" class="block text-sm font-medium text-slate-700">Ciclo (s)</label>
-                            <input type="number" id="budgeted_cycle" name="budgeted_cycle" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                            <label for="budgeted-cycle" class="block text-sm font-medium text-slate-700">Ciclo (s)</label>
+                            <input type="number" id="budgeted-cycle" name="budgeted-cycle" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
                         </div>
                         <div>
-                            <label for="mold_cavities" class="block text-sm font-medium text-slate-700">Cavidades</label>
-                            <input type="number" id="mold_cavities" name="mold_cavities" required min="1" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                            <label for="mold-cavities" class="block text-sm font-medium text-slate-700">Cavidades</label>
+                            <input type="number" id="mold-cavities" name="mold-cavities" required min="1" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
                         </div>
-                        <div>
-                            <label for="piece_weight" class="block text-sm font-medium text-slate-700">Peso Peça (g)</label>
-                            <input type="number" id="piece_weight" name="piece_weight" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                         <div>
+                            <label for="piece-weight" class="block text-sm font-medium text-slate-700">Peso Peça (g)</label>
+                            <input type="number" id="piece-weight" name="piece-weight" required min="0.01" step="0.01" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
                         </div>
                     </div>
-                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="plus-circle"></i> Adicionar ao Planejamento
+                    <button type="submit" id="add-item-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle"></i> Adicionar ao Planeamento
                     </button>
                 </form>
                 <hr class="my-6">
-                <h3 class="text-lg font-semibold mb-3">Itens Planejados</h3>
+                <h3 class="text-lg font-semibold mb-3">Itens Planeados</h3>
                 <div id="planning-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
             </div>
 
-            <!-- Parte 2: Painel de Lançamento -->
             <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-lg">
                 <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="play-square" class="text-cyan-600"></i>Painel de Lançamento</h2>
                 <div id="launch-panel" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2"></div>
             </div>
         </main>
         
-        <!-- Parte 3: Resumo da Produção (Relatório) -->
         <section class="mt-8 bg-white p-6 rounded-lg shadow-lg print-section">
              <div class="print-header hidden mb-6">
-                <h2 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h2>
-                <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
-                <p id="report-date" class="text-md text-slate-600 font-medium"></p>
+                <h1 class="text-3xl font-bold text-slate-900">Relatório de Produção Diária</h1>
+                <p class="text-lg text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
+                <p id="report-date" class="text-md text-slate-600"></p>
              </div>
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i>Resumo da Produção</h2>
@@ -116,25 +151,31 @@
                         <tr>
                             <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Máquina</th>
                             <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Produto</th>
-                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300">Planejado</th>
-                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300 bg-sky-100">1º Turno</th>
-                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300 bg-amber-100">2º Turno</th>
-                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300 bg-indigo-100">3º Turno</th>
+                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300">Planeado</th>
+                            <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-sky-100">1º Turno</th>
+                            <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-amber-100">2º Turno</th>
+                            <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-indigo-100">3º Turno</th>
                             <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300 bg-slate-300">Total Dia</th>
                         </tr>
                         <tr>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo (s)</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Cav.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Peso (g)</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Qtd.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef. Máq. (%)</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef. Molde (%)</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Qtd.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef. Máq. (%)</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef. Molde (%)</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Qtd.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef. Máq. (%)</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef. Molde (%)</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -143,9 +184,8 @@
         </section>
     </div>
 
-    <!-- Modais (Lançamento e Confirmação) -->
-    <div id="turno-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 no-print">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+    <div id="turno-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md m-4">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold" id="modal-title">Lançar Dados do Turno</h3>
                 <button id="close-modal-btn" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-6 h-6"></i></button>
@@ -155,190 +195,310 @@
                 <input type="hidden" id="modal-turno">
                 <div class="space-y-4">
                     <div>
-                        <label for="real-cycle" class="block text-sm font-medium text-slate-700">Ciclo Real (s) <span class="text-red-500">*</span></label>
-                        <input type="number" id="real-cycle" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500">
+                        <label for="real-cycle" class="block text-sm font-medium text-slate-700">Ciclo Real (s)</label>
+                        <input type="number" id="real-cycle" name="real-cycle" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
                     </div>
                     <div>
-                        <label for="real-cavities" class="block text-sm font-medium text-slate-700">Cavidades Reais <span class="text-red-500">*</span></label>
-                        <input type="number" id="real-cavities" required min="1" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500">
+                        <label for="real-cavities" class="block text-sm font-medium text-slate-700">Cavidades Reais</label>
+                        <input type="number" id="real-cavities" name="real-cavities" required min="1" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
                     </div>
                     <div>
                         <label for="produced-qty" class="block text-sm font-medium text-slate-700">Quantidade Produzida (Opcional)</label>
-                        <input type="number" id="produced-qty" min="0" step="1" placeholder="Ex: 5000" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500">
+                        <input type="number" id="produced-qty" name="produced-qty" min="0" step="1" placeholder="Ex: 5000" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
                     </div>
                 </div>
                 <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" id="cancel-modal-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg">Salvar Dados</button>
+                    <button type="button" id="cancel-modal-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg transition-colors">Cancelar</button>
+                    <button type="submit" id="save-turno-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Salvar Dados</button>
                 </div>
             </form>
         </div>
     </div>
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 no-print">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
-            <div class="flex justify-center mb-4"><i data-lucide="alert-triangle" class="w-12 h-12 text-amber-500"></i></div>
-            <h3 class="text-lg font-bold mb-2">Você tem certeza?</h3>
-            <p id="confirm-modal-body" class="mb-6 text-slate-600">Esta ação não pode ser desfeita.</p>
-            <div class="flex justify-center gap-3">
-                <button id="confirm-cancel-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                <button id="confirm-ok-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Sim, continuar</button>
+    
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm m-4 text-center">
+            <div class="flex justify-center mb-4">
+                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-8 h-8 text-yellow-500"></i>
+                </div>
+            </div>
+            <h3 class="text-lg font-bold" id="confirm-modal-title">Tem a certeza?</h3>
+            <p class="text-sm text-slate-600 my-2" id="confirm-modal-text"></p>
+            <div class="mt-6 flex justify-center gap-3">
+                <button id="confirm-modal-cancel-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg transition-colors">Cancelar</button>
+                <button id="confirm-modal-ok-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Confirmar</button>
             </div>
         </div>
     </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- CONFIGURAÇÃO DO SUPABASE ---
+    <script type="module">
+        // --- CONFIGURAÇÃO SUPABASE ---
         const SUPABASE_URL = 'https://hrukbkrzmabdrjyvpmff.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydWtia3J6bWFiZHJqeXZwbWZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzI3OTEsImV4cCI6MjA3NTAwODc5MX0.Auiqvoq-w8EKLvc-KVysAk697uI2o-lEK8zh2cU7LKI';
 
         const { createClient } = supabase;
-        let dbClient; 
-
+        let supabaseClient;
+        
         // --- ELEMENTOS DO DOM ---
         const machineSelect = document.getElementById('machine');
         const planningForm = document.getElementById('planning-form');
         const planningList = document.getElementById('planning-list');
         const launchPanel = document.getElementById('launch-panel');
         const summaryTableBody = document.querySelector('#summary-table tbody');
-        const dateSelector = document.getElementById('date-selector');
-        const saveStatus = document.getElementById('save-status');
-        const connectionStatus = document.getElementById('connection-status');
-        
-        // Modais
         const turnoModal = document.getElementById('turno-modal');
         const turnoForm = document.getElementById('turno-form');
-        const confirmModal = document.getElementById('confirm-modal');
-        const confirmModalBody = document.getElementById('confirm-modal-body');
+        const dateSelector = document.getElementById('date-selector');
+        const saveStatus = document.getElementById('save-status');
+        const printReportBtn = document.getElementById('print-report-btn');
+        const connectionStatus = document.getElementById('connection-status');
+        const addItemBtn = document.getElementById('add-item-btn');
+        const saveTurnoBtn = document.getElementById('save-turno-btn');
+        const refreshDataBtn = document.getElementById('refresh-data-btn');
 
         // --- ESTADO DA APLICAÇÃO ---
         let appData = { planning: [] };
-        let selectedDate = new Date().toISOString().split('T')[0];
-        let confirmCallback = null;
-        let saveTimeout;
+        let selectedDate = getTodayDateString();
+        let currentSubscription = null;
 
-        // --- FUNÇÕES DE RENDERIZAÇÃO ---
-        const renderAll = () => {
+        function getTodayDateString() {
+            const today = new Date();
+            const offset = today.getTimezoneOffset();
+            return new Date(today.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+        }
+
+        // --- FUNÇÕES DE DADOS (SUPABASE) ---
+        async function loadData(date) {
+            if (!supabaseClient) return;
+            saveStatus.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> A carregar...`;
+            lucide.createIcons();
+            try {
+                const { data, error } = await supabaseClient
+                    .from('production_plan')
+                    .select('*')
+                    .eq('date', date);
+                
+                if (error) throw error;
+                
+                appData.planning = data || [];
+                renderAll();
+                saveStatus.textContent = '';
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+                saveStatus.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4 text-red-600 mr-1"></i> Erro ao carregar!`;
+                lucide.createIcons();
+            }
+        }
+
+        async function saveData(item) {
+            if (!supabaseClient) return;
+            const btn = item.id ? saveTurnoBtn : addItemBtn;
+            if(btn) btn.disabled = true;
+
+            saveStatus.innerHTML = `<i data-lucide="save" class="w-4 h-4 animate-spin mr-1"></i> A salvar...`;
+            lucide.createIcons();
+
+            try {
+                const { data, error } = await supabaseClient.from('production_plan').upsert(item).select();
+                if (error) throw error;
+                setTimeout(() => {
+                    saveStatus.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-green-600 mr-1"></i> Salvo`;
+                    lucide.createIcons();
+                }, 500);
+            } catch (error) {
+                console.error("ERRO DETALHADO AO SALVAR:", error);
+                saveStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 mr-1"></i> Falha ao salvar!`;
+                lucide.createIcons();
+                alert("Ocorreu um erro ao salvar os dados. Verifique a consola para mais detalhes (pressione F12).");
+            } finally {
+                 if(btn) btn.disabled = false;
+            }
+        }
+
+        async function handleRemoveItem(id) {
+            if (!supabaseClient) return;
+            saveStatus.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4 animate-spin mr-1"></i> A remover...`;
+            lucide.createIcons();
+            try {
+                const { error } = await supabaseClient.from('production_plan').delete().eq('id', id);
+                if (error) throw error;
+            } catch (error) {
+                console.error("ERRO DETALHADO AO REMOVER:", error);
+                saveStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 mr-1"></i> Falha ao remover!`;
+                lucide.createIcons();
+                alert("Ocorreu um erro ao remover o item. Verifique a consola para mais detalhes (pressione F12).");
+            }
+        }
+
+        function subscribeToChanges(date) {
+            if (currentSubscription) {
+                supabaseClient.removeChannel(currentSubscription);
+            }
+            currentSubscription = supabaseClient.channel(`production_plan_changes_${date}`)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'production_plan', filter: `date=eq.${date}` }, (payload) => {
+                    loadData(date);
+                })
+                .subscribe((status, err) => {
+                     if (status === 'SUBSCRIBED') {
+                        connectionStatus.textContent = 'Conectado em tempo real';
+                        connectionStatus.classList.replace('bg-slate-800', 'bg-green-600');
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        connectionStatus.textContent = 'Erro de conexão em tempo real';
+                        connectionStatus.classList.replace('bg-green-600', 'bg-red-600');
+                    }
+                });
+        }
+        
+        function getSortedPlanning() {
+            return appData.planning.slice().sort((a, b) => {
+                return a.machine.localeCompare(b.machine);
+            });
+        }
+        
+        // --- RENDERIZAÇÃO ---
+        function renderAll() {
             renderPlanningList();
             renderLaunchPanel();
             renderSummaryTable();
-        };
+        }
 
-        const renderPlanningList = () => {
-            planningList.innerHTML = appData.planning.length === 0 
-                ? `<p class="text-slate-500 text-sm">Nenhum item planejado.</p>`
-                : appData.planning.map(item => `
-                    <div class="flex justify-between items-center bg-slate-100 p-2 rounded">
-                        <div class="truncate pr-2">
-                            <span class="font-semibold">${item.machine}</span> - <span title="${item.product}">${item.product}</span>
-                        </div>
-                        <button class="remove-item-btn text-red-500 hover:text-red-700 flex-shrink-0" data-id="${item.id}">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>`).join('');
+        function renderPlanningList() {
+            planningList.innerHTML = appData.planning.length === 0 ? `<p class="text-slate-500 text-sm">Nenhum item planeado.</p>` : '';
+            const sortedData = getSortedPlanning();
+            sortedData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center bg-slate-100 p-2 rounded';
+                div.innerHTML = `<div><span class="font-semibold">${item.machine}</span> - <span>${item.product}</span></div>
+                                 <button class="remove-item-btn text-red-500 hover:text-red-700" data-id="${item.id}" data-product="${item.product}">
+                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                 </button>`;
+                planningList.appendChild(div);
+            });
+            document.querySelectorAll('.remove-item-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showConfirm(`Deseja realmente remover "${btn.dataset.product}" do planeamento?`, () => handleRemoveItem(btn.dataset.id));
+                });
+            });
             lucide.createIcons();
-        };
-
-        const renderLaunchPanel = () => {
-            launchPanel.innerHTML = appData.planning.length === 0
-                ? `<div class="col-span-full text-center text-slate-500"><p>Adicione itens no planejamento para começar.</p></div>`
-                : appData.planning.map(item => {
-                    const turnoBtn = (turnoNum) => {
-                        const turnoData = item.turnos?.[turnoNum];
-                        const done = turnoData && turnoData.realCycle;
-                        return `<button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded flex items-center justify-center ${done ? 'bg-green-600' : 'bg-cyan-600'}" data-id="${item.id}" data-turno="${turnoNum}">
-                                    ${done ? '<i data-lucide="check" class="w-4 h-4 mr-1"></i>' : ''} ${turnoNum}º Turno
-                                </button>`;
-                    };
-                    return `<div class="bg-slate-50 border border-slate-200 p-4 rounded-lg shadow">
-                                <h4 class="font-bold text-lg">${item.machine}</h4>
-                                <p class="text-slate-600 mb-3 truncate" title="${item.product}">${item.product}</p>
-                                <div class="grid grid-cols-3 gap-2">${turnoBtn(1)}${turnoBtn(2)}${turnoBtn(3)}</div>
-                            </div>`;
-                }).join('');
-            lucide.createIcons();
-        };
-
-        const renderSummaryTable = () => {
-            summaryTableBody.innerHTML = appData.planning.length === 0
-                ? `<tr><td colspan="15" class="text-center p-4 text-slate-500">Nenhum dado para exibir.</td></tr>`
-                : appData.planning.map(item => {
-                    const t = [1, 2, 3].map(n => item.turnos?.[n] || {});
-                    const totalQty = t.reduce((sum, turno) => sum + (turno.qty || 0), 0);
-                    const cycleClass = (rc, bc) => rc && parseFloat(rc) > parseFloat(bc) ? 'text-red-600 font-bold' : '';
-                    
-                    return `
-                        <tr class="bg-white border-b">
-                            <td class="px-4 py-2 border font-medium">${item.machine}</td>
-                            <td class="px-4 py-2 border">${item.product}</td>
-                            <td class="px-2 py-2 text-center border">${item.budgeted_cycle}</td>
-                            <td class="px-2 py-2 text-center border">${item.mold_cavities}</td>
-                            <td class="px-2 py-2 text-center border">${item.piece_weight}</td>
-                            ${t.map(turno => `
-                                <td class="px-2 py-2 text-center border ${cycleClass(turno.realCycle, item.budgeted_cycle)}">${turno.realCycle || '-'}</td>
-                                <td class="px-2 py-2 text-center border">${turno.realCavities || '-'}</td>
-                                <td class="px-2 py-2 text-center border">${turno.qty || '-'}</td>
-                            `).join('')}
-                            <td class="px-4 py-2 border font-bold bg-slate-100 text-center">${totalQty}</td>
-                        </tr>`;
-                }).join('');
-        };
-
-        // --- LÓGICA DE DADOS (Supabase) ---
-        const loadData = async (date) => {
-            const { data, error } = await dbClient
-                .from('production_plan')
-                .select('*')
-                .eq('date', date);
-            
-            if (error) {
-                console.error('Erro ao carregar dados:', error);
-                showStatus('Erro de conexão', 'red', 'wifi-off');
-                return;
-            }
-            appData.planning = data;
-            renderAll();
-        };
+        }
         
-        const showStatus = (text, color = 'green', icon = 'check-circle-2') => {
-            clearTimeout(saveTimeout);
-            saveStatus.innerHTML = `<div class="flex items-center gap-1 text-${color}-600"><i data-lucide="${icon}" class="w-4 h-4"></i> ${text}</div>`;
+        function renderLaunchPanel() {
+            launchPanel.innerHTML = appData.planning.length === 0 ? `<div class="col-span-full text-center text-slate-500"><p>Adicione itens no painel de planeamento.</p></div>` : '';
+            const sortedData = getSortedPlanning();
+            sortedData.forEach(item => {
+                const card = document.createElement('div');
+                // CORREÇÃO DEFENSIVA: Garante que `item.turnos` seja um objeto para evitar erros
+                const turnos = item.turnos || {};
+                card.className = 'bg-slate-50 border border-slate-200 p-4 rounded-lg shadow';
+                const turnoBtnClass = (turnoData) => turnoData?.realCycle ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700';
+                const turnoIcon = (turnoData) => turnoData?.realCycle ? '<i data-lucide="check" class="w-4 h-4 mr-1"></i>' : '';
+                card.innerHTML = `<h4 class="font-bold text-lg">${item.machine}</h4>
+                                  <p class="text-slate-600 mb-3 truncate" title="${item.product}">${item.product}</p>
+                                  <div class="grid grid-cols-3 gap-2">
+                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['1'])}" data-id="${item.id}" data-turno="1">${turnoIcon(turnos['1'])} 1º Turno</button>
+                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['2'])}" data-id="${item.id}" data-turno="2">${turnoIcon(turnos['2'])} 2º Turno</button>
+                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['3'])}" data-id="${item.id}" data-turno="3">${turnoIcon(turnos['3'])} 3º Turno</button>
+                                  </div>`;
+                launchPanel.appendChild(card);
+            });
+            document.querySelectorAll('.turno-btn').forEach(btn => btn.addEventListener('click', () => openModal(btn.dataset.id, btn.dataset.turno)));
             lucide.createIcons();
-            saveTimeout = setTimeout(() => saveStatus.innerHTML = '', 3000);
-        };
+        }
+        
+        function getEfficiencyHtml(value) {
+            if (isNaN(value) || !isFinite(value)) return '-';
+            let colorClass = 'text-slate-800';
+            if (value >= 95) {
+                colorClass = 'text-green-600';
+            } else if (value >= 85) {
+                colorClass = 'text-yellow-600';
+            } else {
+                colorClass = 'text-red-600';
+            }
+            return `<span class="${colorClass} font-bold">${value.toFixed(1)}%</span>`;
+        }
 
-        // --- LÓGICA DOS MODAIS ---
-        const showConfirm = (message, onConfirm) => {
-            confirmModalBody.textContent = message;
-            confirmCallback = onConfirm;
-            confirmModal.classList.remove('hidden');
-            lucide.createIcons();
-        };
+        function renderSummaryTable() {
+            summaryTableBody.innerHTML = appData.planning.length === 0 ? `<tr><td colspan="22" class="text-center p-4 text-slate-500">Nenhum dado para exibir.</td></tr>` : '';
+            const sortedData = getSortedPlanning();
+            sortedData.forEach(item => {
+                const row = document.createElement('tr');
+                // CORREÇÃO DEFENSIVA: Garante que `item.turnos` seja um objeto para evitar erros
+                const turnos = item.turnos || {};
+                row.className = 'bg-white border-b';
+                
+                const totalQty = (turnos['1']?.qty || 0) + (turnos['2']?.qty || 0) + (turnos['3']?.qty || 0);
+                const cycleClass = (realCycle, budgetedCycle) => parseFloat(realCycle) > parseFloat(budgetedCycle) ? 'text-red-600 font-bold' : '';
 
-        const hideConfirm = () => {
-            confirmModal.classList.add('hidden');
-            confirmCallback = null;
-        };
+                let turnosHtml = '';
+                for (let i = 1; i <= 3; i++) {
+                    const turnoData = turnos[String(i)];
+                    let machineEff = '-';
+                    let moldEff = '-';
+                    if(turnoData?.realCycle > 0 && item.budgeted_cycle > 0) {
+                        const calculatedEff = (item.budgeted_cycle / turnoData.realCycle) * 100;
+                        machineEff = getEfficiencyHtml(calculatedEff);
+                    }
+                    if(turnoData?.realCavities > 0 && item.mold_cavities > 0) {
+                        const calculatedEff = (turnoData.realCavities / item.mold_cavities) * 100;
+                        moldEff = getEfficiencyHtml(calculatedEff);
+                    }
 
-        const openTurnoModal = (id, turno) => {
+                    turnosHtml += `
+                        <td class="px-2 py-2 text-center border ${cycleClass(turnoData?.realCycle, item.budgeted_cycle)}">${turnoData?.realCycle || '-'}</td>
+                        <td class="px-2 py-2 text-center border">${turnoData?.realCavities || '-'}</td>
+                        <td class="px-2 py-2 text-center border">${turnoData?.qty || '-'}</td>
+                        <td class="px-2 py-2 text-center border">${machineEff}</td>
+                        <td class="px-2 py-2 text-center border">${moldEff}</td>
+                    `;
+                }
+
+                row.innerHTML = `
+                    <td class="px-4 py-2 border">${item.machine}</td>
+                    <td class="px-4 py-2 border">${item.product}</td>
+                    <td class="px-2 py-2 text-center border">${item.budgeted_cycle}</td>
+                    <td class="px-2 py-2 text-center border">${item.mold_cavities}</td>
+                    <td class="px-2 py-2 text-center border">${item.piece_weight}</td>
+                    ${turnosHtml}
+                    <td class="px-4 py-2 border font-bold bg-slate-100">${totalQty}</td>
+                `;
+                summaryTableBody.appendChild(row);
+            });
+        }
+        
+        // --- MODAIS ---
+        const { 'modal-item-id': modalItemId, 'modal-turno': modalTurno, 'modal-title': modalTitle } = turnoForm.elements;
+        const openModal = (id, turno) => {
             const item = appData.planning.find(p => p.id === id);
             if (!item) return;
-            document.getElementById('modal-title').textContent = `Lançar Dados - ${item.machine} (${turno}º Turno)`;
-            document.getElementById('modal-item-id').value = id;
-            document.getElementById('modal-turno').value = turno;
-            const turnoData = item.turnos?.[turno] || {};
-            turnoForm.elements['real-cycle'].value = turnoData.realCycle || '';
-            turnoForm.elements['real-cavities'].value = turnoData.realCavities || item.mold_cavities;
-            turnoForm.elements['produced-qty'].value = turnoData.qty || '';
+            // CORREÇÃO DEFENSIVA: Garante que `item.turnos` seja um objeto para evitar erros
+            const turnos = item.turnos || {};
+            modalTitle.textContent = `Lançar ${turno}º Turno - ${item.machine}`;
+            modalItemId.value = id;
+            modalTurno.value = turno;
+            turnoForm.elements['real-cycle'].value = turnos[turno]?.realCycle || '';
+            turnoForm.elements['real-cavities'].value = turnos[turno]?.realCavities || item.mold_cavities;
+            turnoForm.elements['produced-qty'].value = turnos[turno]?.qty || '';
             turnoModal.classList.remove('hidden');
         };
+        const closeModal = () => turnoModal.classList.add('hidden');
+        [turnoModal.querySelector('#close-modal-btn'), turnoModal.querySelector('#cancel-modal-btn')].forEach(el => el.addEventListener('click', closeModal));
 
-        const closeTurnoModal = () => {
-            turnoModal.classList.add('hidden');
-            turnoForm.reset();
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmModalText = document.getElementById('confirm-modal-text');
+        const confirmOkBtn = document.getElementById('confirm-modal-ok-btn');
+        const confirmCancelBtn = document.getElementById('confirm-modal-cancel-btn');
+        let confirmCallback = null;
+        
+        const showConfirm = (text, onConfirm) => {
+            confirmModalText.textContent = text;
+            confirmCallback = onConfirm;
+            confirmModal.classList.remove('hidden');
         };
+        const hideConfirm = () => { confirmModal.classList.add('hidden'); confirmCallback = null; };
+        confirmOkBtn.addEventListener('click', () => { if (confirmCallback) confirmCallback(); hideConfirm(); });
+        confirmCancelBtn.addEventListener('click', hideConfirm);
 
-        // --- HANDLERS DE EVENTOS ---
+        // --- EVENT LISTENERS ---
         planningForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(planningForm);
@@ -346,131 +506,78 @@
                 date: selectedDate,
                 machine: formData.get('machine'),
                 product: formData.get('product'),
-                budgeted_cycle: parseFloat(formData.get('budgeted_cycle')),
-                mold_cavities: parseInt(formData.get('mold_cavities')),
-                piece_weight: parseFloat(formData.get('piece_weight')),
+                budgeted_cycle: parseFloat(formData.get('budgeted-cycle')),
+                mold_cavities: parseInt(formData.get('mold-cavities')),
+                piece_weight: parseFloat(formData.get('piece-weight')),
+                turnos: { '1': {}, '2': {}, '3': {} }
             };
-
-            const { error } = await dbClient.from('production_plan').insert([newItem]);
-            if (error) {
-                console.error("Erro ao adicionar item:", error);
-                showStatus('Erro ao salvar', 'red', 'alert-circle');
-            } else {
-                planningForm.reset();
-                showStatus('Item adicionado!');
-            }
+            await saveData(newItem);
+            planningForm.reset();
         });
 
         turnoForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = document.getElementById('modal-item-id').value;
-            const turno = document.getElementById('modal-turno').value;
+            const id = modalItemId.value;
+            const turno = modalTurno.value;
             const item = appData.planning.find(p => p.id === id);
-
             if (item) {
-                const updatedTurnos = { ...item.turnos };
-                updatedTurnos[turno] = {
+                // CORREÇÃO DEFENSIVA: Garante que o objeto exista antes de atribuir
+                if (!item.turnos) item.turnos = { '1': {}, '2': {}, '3': {} };
+                item.turnos[turno] = {
                     realCycle: parseFloat(turnoForm.elements['real-cycle'].value),
                     realCavities: parseInt(turnoForm.elements['real-cavities'].value),
                     qty: turnoForm.elements['produced-qty'].value ? parseInt(turnoForm.elements['produced-qty'].value) : null
                 };
-
-                const { error } = await dbClient
-                    .from('production_plan')
-                    .update({ turnos: updatedTurnos })
-                    .eq('id', id);
-
-                if (error) {
-                    console.error("Erro ao atualizar turno:", error);
-                    showStatus('Erro ao salvar', 'red', 'alert-circle');
-                } else {
-                    closeTurnoModal();
-                    showStatus('Turno salvo!');
-                }
-            }
-        });
-        
-        document.body.addEventListener('click', async (e) => {
-            const removeBtn = e.target.closest('.remove-item-btn');
-            if (removeBtn) {
-                const id = removeBtn.dataset.id;
-                showConfirm('Deseja remover este item do planejamento?', async () => {
-                    const { error } = await dbClient.from('production_plan').delete().eq('id', id);
-                    if (error) {
-                        console.error("Erro ao remover item:", error);
-                        showStatus('Erro ao remover', 'red', 'alert-circle');
-                    } else {
-                        showStatus('Item removido!');
-                    }
-                });
-            }
-            if (e.target.closest('.turno-btn')) {
-                const btn = e.target.closest('.turno-btn');
-                openTurnoModal(btn.dataset.id, btn.dataset.turno);
+                await saveData(item);
+                closeModal();
             }
         });
 
         dateSelector.addEventListener('change', (e) => {
             selectedDate = e.target.value;
             loadData(selectedDate);
+            subscribeToChanges(selectedDate);
         });
 
-        // Eventos dos modais
-        document.getElementById('close-modal-btn').addEventListener('click', closeTurnoModal);
-        document.getElementById('cancel-modal-btn').addEventListener('click', closeTurnoModal);
-        document.getElementById('confirm-ok-btn').addEventListener('click', () => {
-            if (confirmCallback) confirmCallback();
-            hideConfirm();
-        });
-        document.getElementById('confirm-cancel-btn').addEventListener('click', hideConfirm);
-        document.getElementById('print-report-btn').addEventListener('click', () => {
-             const [year, month, day] = selectedDate.split('-');
-             document.getElementById('report-date').textContent = `Data: ${day}/${month}/${year}`;
-             window.print();
+        printReportBtn.addEventListener('click', () => {
+            document.getElementById('report-date').textContent = `Data: ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`;
+            document.querySelector('.print-header').classList.remove('hidden');
+            window.print();
+            document.querySelector('.print-header').classList.add('hidden');
         });
 
-        // --- INICIALIZAÇÃO E REALTIME ---
-        const initializeApp = async () => {
-            if (SUPABASE_URL === 'COLE_SUA_URL_AQUI' || SUPABASE_KEY === 'COLE_SUA_CHAVE_ANON_AQUI') {
-                document.body.innerHTML = `<div class="p-8 text-center bg-red-100 text-red-800">
-                    <h1 class="text-2xl font-bold">Configuração Necessária</h1>
-                    <p class="mt-2">Por favor, insira sua URL e Chave do Supabase no arquivo index.html para continuar.</p>
-                    </div>`;
-                return;
+        refreshDataBtn.addEventListener('click', () => {
+            refreshDataBtn.querySelector('i').classList.add('animate-spin');
+            loadData(selectedDate).finally(() => {
+                setTimeout(() => refreshDataBtn.querySelector('i').classList.remove('animate-spin'), 500);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('COLE_SUA_URL_AQUI')) {
+                try {
+                    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+                    connectionStatus.textContent = 'A conectar...';
+                    for (let i = 1; i <= 32; i++) {
+                        const option = document.createElement('option');
+                        option.value = `H-${String(i).padStart(2, '0')}`;
+                        option.textContent = `H-${String(i).padStart(2, '0')}`;
+                        machineSelect.appendChild(option);
+                    }
+                    dateSelector.value = selectedDate;
+                    loadData(selectedDate);
+                    subscribeToChanges(selectedDate);
+                } catch(e) {
+                    connectionStatus.textContent = 'Erro de configuração do Supabase!';
+                    connectionStatus.classList.replace('bg-slate-800', 'bg-red-600');
+                    console.error(e);
+                }
+            } else {
+                connectionStatus.textContent = 'Por favor, configure as credenciais do Supabase no código.';
+                connectionStatus.classList.replace('bg-slate-800', 'bg-yellow-600');
             }
-
-            // Inicializa o cliente do Supabase APÓS a verificação
-            dbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-            dateSelector.value = selectedDate;
-            for (let i = 1; i <= 32; i++) {
-                machineSelect.innerHTML += `<option value="H-${String(i).padStart(2, '0')}">H-${String(i).padStart(2, '0')}</option>`;
-            }
-            
-            await loadData(selectedDate);
             lucide.createIcons();
-
-            // Listener de Realtime
-            const channel = dbClient.channel('public:production_plan')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'production_plan' }, payload => {
-                    console.log('Mudança recebida!', payload);
-                    // Apenas recarrega os dados do dia selecionado se a mudança for relevante
-                    if (payload.new?.date === selectedDate || payload.old?.date === selectedDate) {
-                        loadData(selectedDate);
-                    }
-                })
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                        connectionStatus.innerHTML = `<i data-lucide="wifi" class="text-green-400 w-4 h-4"></i> <span>Conectado em tempo real</span>`;
-                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                         connectionStatus.innerHTML = `<i data-lucide="wifi-off" class="text-red-400 w-4 h-4"></i> <span>Desconectado</span>`;
-                    }
-                    lucide.createIcons();
-                });
-        };
-
-        initializeApp();
-    });
+        });
     </script>
 </body>
 </html>
