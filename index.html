@@ -41,16 +41,17 @@
             z-index: 10;
         }
 
+        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL --- */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 10mm;
+                margin: 0mm; /* Margens da impressora zeradas para controlo total */
             }
 
             body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
-                font-size: 8pt;
+                font-size: 8pt; 
             }
 
             body * { visibility: hidden; }
@@ -60,25 +61,35 @@
                 left: 0;
                 top: 0;
                 width: 100%;
+                box-sizing: border-box;
             }
+
+            .print-header {
+                padding: 5mm 5mm 2mm 5mm; /* Adiciona espaçamento apenas ao cabeçalho */
+            }
+
             .no-print { display: none !important; }
 
             #summary-table {
-                width: 100%;
+                width: calc(100% - 10mm); /* Tabela ocupa 100% da largura menos as margens laterais */
+                margin: 0 5mm; /* Adiciona margens laterais para não colar nas bordas */
                 border-collapse: collapse;
-                font-size: 7pt;
+                font-size: 5.5pt; /* Fonte ultra reduzida para caber tudo */
             }
             #summary-table th,
             #summary-table td {
                 border: 1px solid #ccc;
-                padding: 2px 3px;
+                padding: 1px; /* Espaçamento mínimo absoluto */
                 text-align: center;
+                word-break: break-word;
             }
+            
             #summary-table td:nth-child(1), 
             #summary-table th:nth-child(1),
             #summary-table td:nth-child(2),
             #summary-table th:nth-child(2) {
-                text-align: left;
+                text-align: left; 
+                padding-left: 3px;
             }
             
             #summary-table thead { background-color: #e5e7eb !important; }
@@ -169,9 +180,9 @@
         
         <section id="summary-container" class="relative mt-8 bg-white p-6 rounded-lg shadow-lg print-section">
              <div class="print-header hidden mb-6">
-                <h1 class="text-3xl font-bold text-slate-900">Relatório de Produção Diária</h1>
-                <p class="text-lg text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
-                <p id="report-date" class="text-md text-slate-600"></p>
+                <h1 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h1>
+                <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
+                <p id="report-date" class="text-sm text-slate-600"></p>
              </div>
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i>Resumo da Produção</h2>
@@ -183,33 +194,33 @@
                 <table id="summary-table" class="w-full text-sm text-left text-slate-500">
                     <thead class="text-xs text-slate-700 uppercase bg-slate-200">
                         <tr>
-                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Máquina</th>
+                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Máq.</th>
                             <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Produto</th>
-                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300">Planeado</th>
+                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300">Plan.</th>
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-sky-100">1º Turno</th>
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-amber-100">2º Turno</th>
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-indigo-100">3º Turno</th>
-                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300 bg-slate-300">Total Dia</th>
+                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300 bg-slate-300">Total</th>
                         </tr>
                         <tr>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo (s)</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Cav.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Peso (g)</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo Real</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300">Peso</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. R.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Qtd.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef. Máq.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef. Molde</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo Real</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Máq</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Mol</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. R.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Qtd.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef. Máq.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef. Molde</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo Real</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Máq</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Mol</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. R.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Qtd.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef. Máq.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef. Molde</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef.Máq</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef.Mol</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
