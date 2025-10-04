@@ -342,7 +342,7 @@
 
         // --- Estado da Aplicação ---
         let appData = { planning: [] };
-        let selectedDate = getTodayDateString();
+        let selectedDate = getProductionDateString();
         let currentSubscription = null;
 
         /**
@@ -385,12 +385,24 @@
         // =================================================================================
 
         /**
-         * Retorna a data de hoje no formato YYYY-MM-DD.
+         * Retorna a data de produção correta, considerando a viragem de turno após a meia-noite.
          */
-        function getTodayDateString() {
-            const today = new Date();
-            const offset = today.getTimezoneOffset();
-            return new Date(today.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+        function getProductionDateString() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const cutoffHour = 7; // O dia de produção vira às 7h da manhã.
+
+            if (currentHour < cutoffHour) {
+                // Se for entre 00:00 e 06:59, considera o dia anterior.
+                const yesterday = new Date(now);
+                yesterday.setDate(now.getDate() - 1);
+                const offset = yesterday.getTimezoneOffset();
+                return new Date(yesterday.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+            } else {
+                // Caso contrário, é o dia atual.
+                const offset = now.getTimezoneOffset();
+                return new Date(now.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+            }
         }
 
         /**
@@ -602,7 +614,7 @@
         }
 
         function renderSummaryTable() {
-            summaryTableBody.innerHTML = appData.planning.length === 0 ? `<tr><td colspan="22" class="text-center p-4 text-slate-500">Nenhum dado para exibir.</td></tr>` : '';
+            summaryTableBody.innerHTML = appData.planning.length === 0 ? `<tr><td colspan="23" class="text-center p-4 text-slate-500">Nenhum dado para exibir.</td></tr>` : '';
             getSortedPlanning().forEach(item => {
                 const row = document.createElement('tr');
                 const turnos = item.turnos || {};
@@ -635,7 +647,8 @@
                                  <td class="px-2 py-2 text-center border">${item.mold_cavities}</td>
                                  <td class="px-2 py-2 text-center border">${item.piece_weight}</td>
                                  ${turnosHtml}
-                                 <td class="px-4 py-2 border font-bold bg-slate-100">${totalQty}</td>`;
+                                 <td class="px-4 py-2 border font-bold bg-slate-100">${totalQty}</td>
+                                 <td class="px-4 py-2 border">${item.machine}</td>`;
                 summaryTableBody.appendChild(row);
             });
         }
