@@ -41,7 +41,7 @@
             z-index: 10;
         }
 
-        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v3.0) --- */
+        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v3.2) --- */
         @media print {
             @page {
                 size: A4 landscape;
@@ -75,14 +75,17 @@
                 box-sizing: border-box;
             }
 
-            .print-header {
-                flex-shrink: 0; /* Impede que o cabeçalho encolha */
-                text-align: center;
-                margin-bottom: 2mm; 
-            }
+            .print-header { display: none !important; } /* Esconde o cabeçalho principal */
 
-            .print-header h1 { font-size: 11pt !important; }
-            .print-header p { font-size: 8pt !important; }
+            .print-title-bar {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2mm;
+                padding: 0 1mm; /* Pequeno padding para alinhar com a tabela */
+            }
+             .print-title-bar h2 { font-size: 10pt; font-weight: bold; }
+             .print-title-bar p { font-size: 9pt; font-weight: bold; }
 
             .no-print { display: none !important; }
 
@@ -100,7 +103,7 @@
             #summary-table th,
             #summary-table td {
                 border: 1px solid #ccc;
-                padding: 1.5px; 
+                padding: 1.2px; /* Espaçamento mínimo para compactação vertical */
                 text-align: center;
                 white-space: nowrap; 
                 overflow: hidden;      
@@ -109,7 +112,7 @@
             
             /* --- Distribuição de Largura das Colunas (Soma = 100%) --- */
             #summary-table th:nth-child(1), #summary-table td:nth-child(1) { width: 4%; text-align: left; padding-left: 2px;}
-            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { width: 20%; text-align: left; padding-left: 2px; }
+            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { width: 12%; text-align: left; padding-left: 2px; }
             
             /* Planeado */
             #summary-table th:nth-child(3), #summary-table td:nth-child(3) { width: 4%; }
@@ -117,13 +120,29 @@
             #summary-table th:nth-child(5), #summary-table td:nth-child(5) { width: 4%; }
 
             /* Turnos */
-            #summary-table th:nth-child(n+6):nth-child(-n+20),
-            #summary-table td:nth-child(n+6):nth-child(-n+20) {
-                width: 4%;
-            }
+            #summary-table th:nth-child(6),  #summary-table td:nth-child(6),
+            #summary-table th:nth-child(11), #summary-table td:nth-child(11),
+            #summary-table th:nth-child(16), #summary-table td:nth-child(16) { width: 4%; } /* Ciclo Real */
+
+            #summary-table th:nth-child(7),  #summary-table td:nth-child(7),
+            #summary-table th:nth-child(12), #summary-table td:nth-child(12),
+            #summary-table th:nth-child(17), #summary-table td:nth-child(17) { width: 4%; } /* Cav. Real */
+
+            #summary-table th:nth-child(8),  #summary-table td:nth-child(8),
+            #summary-table th:nth-child(13), #summary-table td:nth-child(13),
+            #summary-table th:nth-child(18), #summary-table td:nth-child(18) { width: 6%; } /* Qtd. */
+
+            #summary-table th:nth-child(9),  #summary-table td:nth-child(9),
+            #summary-table th:nth-child(14), #summary-table td:nth-child(14),
+            #summary-table th:nth-child(19), #summary-table td:nth-child(19) { width: 7%; } /* Ef. Máquina */
             
-            /* Total */
-            #summary-table th:nth-child(21), #summary-table td:nth-child(21) { width: 4%; font-weight: bold; }
+            #summary-table th:nth-child(10), #summary-table td:nth-child(10),
+            #summary-table th:nth-child(15), #summary-table td:nth-child(15),
+            #summary-table th:nth-child(20), #summary-table td:nth-child(20) { width: 4%; } /* Ef. Molde */
+            
+            /* Total & Máq Final */
+            #summary-table th:nth-child(21), #summary-table td:nth-child(21) { width: 6%; font-weight: bold; }
+            #summary-table th:nth-child(22), #summary-table td:nth-child(22) { width: 4%; }
             
             /* Cores para impressão */
             #summary-table thead { background-color: #e5e7eb !important; }
@@ -211,13 +230,18 @@
             </div>
         </main>
         
-        <section id="summary-container" class="relative mt-8 bg-white p-6 rounded-lg shadow-lg print-section">
-             <div class="print-header hidden mb-6">
-                <h1 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h1>
-                <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
-                <p id="report-date" class="text-sm text-slate-600"></p>
+        <section id="summary-container" class="relative mt-8 bg-white p-6 rounded-lg shadow-lg">
+             <div class="print-section">
+                <div class="print-header hidden">
+                    <h1 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h1>
+                    <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
+                </div>
+                <div class="print-title-bar hidden justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Eficiência x Máquina</h2>
+                    <p id="report-date" class="text-sm font-semibold"></p>
+                </div>
              </div>
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4 no-print">
                 <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i>Resumo da Produção</h2>
                 <button id="print-report-btn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 no-print">
                     <i data-lucide="printer"></i> Imprimir Relatório
@@ -234,6 +258,7 @@
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-amber-100">2º Turno</th>
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-indigo-100">3º Turno</th>
                             <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300 bg-slate-300">Total</th>
+                            <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Máq.</th>
                         </tr>
                         <tr>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo</th>
@@ -730,9 +755,11 @@
 
             printReportBtn.addEventListener('click', () => {
                 document.getElementById('report-date').textContent = `Data: ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`;
-                document.querySelector('.print-header').classList.remove('hidden');
+                document.querySelector('.print-title-bar').classList.remove('hidden');
+                document.querySelector('.print-title-bar').classList.add('flex');
                 window.print();
-                document.querySelector('.print-header').classList.add('hidden');
+                document.querySelector('.print-title-bar').classList.add('hidden');
+                document.querySelector('.print-title-bar').classList.remove('flex');
             });
 
             refreshDataBtn.addEventListener('click', () => {
