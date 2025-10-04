@@ -69,14 +69,14 @@
                 top: 0;
                 width: 100%;
                 height: 100%;
-                padding: 3mm; /* Margem de segurança interna MÍNIMA */
+                padding: 0; /* Zera o padding principal da secção */
                 box-sizing: border-box;
             }
 
             .print-header {
-                padding: 0;
+                padding: 3mm 3mm 2mm 3mm; /* Controla o espaçamento do cabeçalho */
                 text-align: center;
-                margin-bottom: 2mm; /* Espaço mínimo entre cabeçalho e tabela */
+                margin-bottom: 2mm;
             }
 
             .print-header h1 { font-size: 12pt !important; }
@@ -85,7 +85,8 @@
             .no-print { display: none !important; }
 
             #summary-table {
-                width: 100%; /* Tabela ocupa 100% do container com padding */
+                width: calc(100% - 6mm); /* Ocupa a largura total menos as margens de segurança */
+                margin: 0 3mm; /* Centraliza a tabela com margens de segurança */
                 border-collapse: collapse;
                 font-size: 6pt; 
                 table-layout: fixed; /* Força o layout da tabela a obedecer as larguras */
@@ -97,27 +98,40 @@
                 text-align: center;
                 white-space: nowrap; /* Impede a quebra de linha em TODAS as células */
                 overflow: hidden;      /* Esconde o texto que transborda */
-                text-overflow: ellipsis;/* Adiciona "..." */
             }
             
             /* --- Distribuição de Largura das Colunas --- */
-            #summary-table td:nth-child(1) { width: 5%; text-align: left; padding-left: 3px; }  /* Máq. */
-            #summary-table td:nth-child(2) { width: 16%; text-align: left; padding-left: 3px; } /* Produto */
+            #summary-table th:nth-child(1), #summary-table td:nth-child(1) { width: 5%; text-align: left; padding-left: 2px;}
+            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { width: 17%; text-align: left; padding-left: 2px; }
             
             /* Planeado */
-            #summary-table td:nth-child(3) { width: 4%; } /* Ciclo */
-            #summary-table td:nth-child(4) { width: 3.5%; } /* Cav. */
-            #summary-table td:nth-child(5) { width: 3.5%; } /* Peso */
+            #summary-table th:nth-child(3), #summary-table td:nth-child(3) { width: 3.5%; }
+            #summary-table th:nth-child(4), #summary-table td:nth-child(4) { width: 3.5%; }
+            #summary-table th:nth-child(5), #summary-table td:nth-child(5) { width: 3.5%; }
 
             /* Turnos */
-            #summary-table td:nth-child(6),  #summary-table td:nth-child(11), #summary-table td:nth-child(16) { width: 4%; } /* Ciclo */
-            #summary-table td:nth-child(7),  #summary-table td:nth-child(12), #summary-table td:nth-child(17) { width: 3.5%; } /* Cav. R. */
-            #summary-table td:nth-child(8),  #summary-table td:nth-child(13), #summary-table td:nth-child(18) { width: 4%; } /* Qtd. */
-            #summary-table td:nth-child(9),  #summary-table td:nth-child(14), #summary-table td:nth-child(19) { width: 4.5%; } /* Ef.Máq */
-            #summary-table td:nth-child(10), #summary-table td:nth-child(15), #summary-table td:nth-child(20) { width: 4.5%; } /* Ef.Mol */
+            #summary-table th:nth-child(6),  #summary-table td:nth-child(6),
+            #summary-table th:nth-child(11), #summary-table td:nth-child(11),
+            #summary-table th:nth-child(16), #summary-table td:nth-child(16) { width: 3.5%; } /* Ciclo */
+            
+            #summary-table th:nth-child(7),  #summary-table td:nth-child(7),
+            #summary-table th:nth-child(12), #summary-table td:nth-child(12),
+            #summary-table th:nth-child(17), #summary-table td:nth-child(17) { width: 3.5%; } /* Cav. R. */
+            
+            #summary-table th:nth-child(8),  #summary-table td:nth-child(8),
+            #summary-table th:nth-child(13), #summary-table td:nth-child(13),
+            #summary-table th:nth-child(18), #summary-table td:nth-child(18) { width: 3.5%; } /* Qtd. */
+            
+            #summary-table th:nth-child(9),  #summary-table td:nth-child(9),
+            #summary-table th:nth-child(14), #summary-table td:nth-child(14),
+            #summary-table th:nth-child(19), #summary-table td:nth-child(19) { width: 5%; } /* Ef.Máq */
+            
+            #summary-table th:nth-child(10), #summary-table td:nth-child(10),
+            #summary-table th:nth-child(15), #summary-table td:nth-child(15),
+            #summary-table th:nth-child(20), #summary-table td:nth-child(20) { width: 5%; } /* Ef.Mol */
             
             /* Total */
-            #summary-table td:nth-child(21) { width: 4.5%; font-weight: bold; }
+            #summary-table th:nth-child(21), #summary-table td:nth-child(21) { width: 5%; font-weight: bold; }
             
             /* Cores para impressão */
             #summary-table thead { background-color: #e5e7eb !important; }
