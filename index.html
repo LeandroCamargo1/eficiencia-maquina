@@ -41,7 +41,7 @@
             z-index: 10;
         }
 
-        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v2.2) --- */
+        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v2.4) --- */
         @media print {
             @page {
                 size: A4 landscape;
@@ -69,7 +69,7 @@
                 top: 0;
                 width: 100%;
                 height: 100%;
-                padding: 3mm; /* Margem de segurança interna para todo o conteúdo */
+                padding: 2mm; /* Margem de segurança interna MÍNIMA */
                 box-sizing: border-box;
             }
 
@@ -95,6 +95,9 @@
                 border: 1px solid #ccc;
                 padding: 1.5px; /* Espaçamento ultra-fino */
                 text-align: center;
+                white-space: nowrap; /* Impede a quebra de linha em TODAS as células */
+                overflow: hidden;      /* Esconde o texto que transborda */
+                text-overflow: ellipsis;/* Adiciona "..." */
             }
             
             #summary-table th:nth-child(1),
@@ -107,9 +110,6 @@
                 width: 15%; /* Largura para Produto */
                 text-align: left; 
                 padding-left: 3px;
-                white-space: nowrap; /* Impede a quebra de linha */
-                overflow: hidden;      /* Esconde o texto que transborda */
-                text-overflow: ellipsis;/* Adiciona "..." */
             }
             
             /* Cores para impressão */
@@ -122,7 +122,7 @@
             .bg-slate-300 { background-color: #cbd5e1 !important; }
             .text-green-600 { color: #059669 !important; }
             .text-yellow-600 { color: #ca8a04 !important; }
-            .text-red-600 { color: #dc2626 !important; }
+            .text-red-600 { color: #dc2626 !important; font-weight: bold !important; }
         }
     </style>
 </head>
@@ -226,17 +226,17 @@
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Cav.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Peso</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. R.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Qtd.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Máq</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Mol</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. R.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Qtd.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Máq</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Mol</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. R.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Qtd.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef.Máq</th>
