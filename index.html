@@ -41,7 +41,7 @@
             z-index: 10;
         }
 
-        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v2.8) --- */
+        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v3.0) --- */
         @media print {
             @page {
                 size: A4 landscape;
@@ -94,7 +94,7 @@
             #summary-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 6pt; 
+                font-size: 6.5pt;
                 table-layout: fixed; 
             }
             #summary-table th,
@@ -108,22 +108,22 @@
             }
             
             /* --- Distribuição de Largura das Colunas (Soma = 100%) --- */
-            #summary-table th:nth-child(1), #summary-table td:nth-child(1) { width: 4%; text-align: left; padding-left: 2px;} /* Máq. */
-            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { width: 16%; text-align: left; padding-left: 2px; } /* Produto */
+            #summary-table th:nth-child(1), #summary-table td:nth-child(1) { width: 4%; text-align: left; padding-left: 2px;}
+            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { width: 20%; text-align: left; padding-left: 2px; }
             
             /* Planeado */
-            #summary-table th:nth-child(3), #summary-table td:nth-child(3) { width: 3%; } /* Ciclo */
-            #summary-table th:nth-child(4), #summary-table td:nth-child(4) { width: 3%; } /* Cav. */
-            #summary-table th:nth-child(5), #summary-table td:nth-child(5) { width: 3%; } /* Peso */
+            #summary-table th:nth-child(3), #summary-table td:nth-child(3) { width: 4%; }
+            #summary-table th:nth-child(4), #summary-table td:nth-child(4) { width: 4%; }
+            #summary-table th:nth-child(5), #summary-table td:nth-child(5) { width: 4%; }
 
-            /* Turnos (Cada coluna com 4.4%) */
+            /* Turnos */
             #summary-table th:nth-child(n+6):nth-child(-n+20),
             #summary-table td:nth-child(n+6):nth-child(-n+20) {
-                width: 4.4%;
+                width: 4%;
             }
             
             /* Total */
-            #summary-table th:nth-child(21), #summary-table td:nth-child(21) { width: 5%; font-weight: bold; }
+            #summary-table th:nth-child(21), #summary-table td:nth-child(21) { width: 4%; font-weight: bold; }
             
             /* Cores para impressão */
             #summary-table thead { background-color: #e5e7eb !important; }
@@ -229,7 +229,7 @@
                         <tr>
                             <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Máq.</th>
                             <th scope="col" rowspan="2" class="px-4 py-3 border border-slate-300">Produto</th>
-                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300">Plan.</th>
+                            <th scope="col" colspan="3" class="px-4 py-3 text-center border border-slate-300">Planeado</th>
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-sky-100">1º Turno</th>
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-amber-100">2º Turno</th>
                             <th scope="col" colspan="5" class="px-4 py-3 text-center border border-slate-300 bg-indigo-100">3º Turno</th>
@@ -242,18 +242,18 @@
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Qtd.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Máq</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Mol</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef. Máquina</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef. Molde</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Qtd.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Máq</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Mol</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef. Máquina</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef. Molde</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Qtd.</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef.Máq</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef.Mol</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef. Máquina</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef. Molde</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
