@@ -41,7 +41,7 @@
             z-index: 10;
         }
 
-        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v2.7) --- */
+        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v2.8) --- */
         @media print {
             @page {
                 size: A4 landscape;
@@ -69,14 +69,16 @@
                 top: 0;
                 width: 100%;
                 height: 100%;
-                padding: 0; /* Zera o padding principal da secção */
+                display: flex; /* USA FLEXBOX PARA CONTROLO TOTAL */
+                flex-direction: column;
+                padding: 3mm; /* Margem de segurança interna */
                 box-sizing: border-box;
             }
 
             .print-header {
-                padding: 2mm 3mm 1mm 3mm; /* Margem mínima no topo e segurança nas laterais */
+                flex-shrink: 0; /* Impede que o cabeçalho encolha */
                 text-align: center;
-                margin-bottom: 1mm;
+                margin-bottom: 2mm; 
             }
 
             .print-header h1 { font-size: 11pt !important; }
@@ -84,21 +86,25 @@
 
             .no-print { display: none !important; }
 
+            .overflow-x-auto {
+                flex-grow: 1; /* Faz a tabela ocupar o espaço restante */
+                overflow: visible; /* Remove a barra de scroll na impressão */
+            }
+
             #summary-table {
-                width: calc(100% - 6mm); /* Ocupa a largura total menos as margens de segurança */
-                margin: 0 3mm; /* Centraliza a tabela com margens de segurança mínimas */
+                width: 100%;
                 border-collapse: collapse;
                 font-size: 6pt; 
-                table-layout: fixed; /* Força o layout da tabela a obedecer as larguras */
+                table-layout: fixed; 
             }
             #summary-table th,
             #summary-table td {
                 border: 1px solid #ccc;
-                padding: 1.5px; /* Espaçamento ultra-fino */
+                padding: 1.5px; 
                 text-align: center;
-                white-space: nowrap; /* Impede a quebra de linha em TODAS as células */
-                overflow: hidden;      /* Esconde o texto que transborda */
-                text-overflow: ellipsis;/* Adiciona "..." */
+                white-space: nowrap; 
+                overflow: hidden;      
+                text-overflow: ellipsis;
             }
             
             /* --- Distribuição de Largura das Colunas (Soma = 100%) --- */
@@ -233,18 +239,18 @@
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Ciclo</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Cav.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300">Peso</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ciclo Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Qtd.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Máq</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-sky-100">Ef.Mol</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ciclo Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Qtd.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Máq</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-amber-100">Ef.Mol</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo</th>
-                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. R.</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ciclo Real</th>
+                            <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Cav. Real</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Qtd.</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef.Máq</th>
                             <th scope="col" class="px-2 py-2 text-center border border-slate-300 bg-indigo-100">Ef.Mol</th>
