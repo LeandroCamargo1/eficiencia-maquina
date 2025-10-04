@@ -41,57 +41,78 @@
             z-index: 10;
         }
 
-        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL --- */
+        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v2.2) --- */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 0mm; /* Margens da impressora zeradas para controlo total */
+                margin: 0; /* Zera as margens da página para controlo total */
+            }
+
+            html, body {
+                width: 297mm;
+                height: 210mm;
+                margin: 0;
+                padding: 0;
             }
 
             body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
-                font-size: 8pt; 
             }
 
             body * { visibility: hidden; }
             .print-section, .print-section * { visibility: visible; }
+            
             .print-section {
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
+                height: 100%;
+                padding: 3mm; /* Margem de segurança interna para todo o conteúdo */
                 box-sizing: border-box;
             }
 
             .print-header {
-                padding: 5mm 5mm 2mm 5mm; /* Adiciona espaçamento apenas ao cabeçalho */
+                padding: 0;
+                text-align: center;
+                margin-bottom: 2mm; /* Espaço mínimo entre cabeçalho e tabela */
             }
+
+            .print-header h1 { font-size: 12pt !important; }
+            .print-header p { font-size: 9pt !important; }
 
             .no-print { display: none !important; }
 
             #summary-table {
-                width: calc(100% - 10mm); /* Tabela ocupa 100% da largura menos as margens laterais */
-                margin: 0 5mm; /* Adiciona margens laterais para não colar nas bordas */
+                width: 100%; /* Tabela ocupa 100% do container com padding */
                 border-collapse: collapse;
-                font-size: 5.5pt; /* Fonte ultra reduzida para caber tudo */
+                font-size: 6pt; 
+                table-layout: fixed; /* Força o layout da tabela a obedecer as larguras */
             }
             #summary-table th,
             #summary-table td {
                 border: 1px solid #ccc;
-                padding: 1px; /* Espaçamento mínimo absoluto */
+                padding: 1.5px; /* Espaçamento ultra-fino */
                 text-align: center;
-                word-break: break-word;
             }
             
-            #summary-table td:nth-child(1), 
             #summary-table th:nth-child(1),
-            #summary-table td:nth-child(2),
-            #summary-table th:nth-child(2) {
+            #summary-table td:nth-child(1) {
+                width: 6%; /* Largura para Máq. */
+            }
+            
+            #summary-table th:nth-child(2),
+            #summary-table td:nth-child(2) {
+                width: 15%; /* Largura para Produto */
                 text-align: left; 
                 padding-left: 3px;
+                white-space: nowrap; /* Impede a quebra de linha */
+                overflow: hidden;      /* Esconde o texto que transborda */
+                text-overflow: ellipsis;/* Adiciona "..." */
             }
             
+            /* Cores para impressão */
             #summary-table thead { background-color: #e5e7eb !important; }
             .bg-sky-100 { background-color: #e0f2fe !important; }
             .bg-amber-100 { background-color: #fef3c7 !important; }
@@ -99,7 +120,6 @@
             .bg-slate-100 { background-color: #f1f5f9 !important; }
             .bg-slate-200 { background-color: #e2e8f0 !important; }
             .bg-slate-300 { background-color: #cbd5e1 !important; }
-
             .text-green-600 { color: #059669 !important; }
             .text-yellow-600 { color: #ca8a04 !important; }
             .text-red-600 { color: #dc2626 !important; }
