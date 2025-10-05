@@ -41,7 +41,7 @@
             z-index: 10;
         }
 
-        /* --- FORMATAÇÃO DE IMPRESSÃO PADRÃO (v3.3) --- */
+        /* --- FORMATAÇÃO DE IMPRESSÃO PADRÃO (v3.4) --- */
         @media print {
             @page {
                 size: A4 landscape;
@@ -62,6 +62,11 @@
                 left: 0;
                 top: 0;
                 width: 100%;
+            }
+
+            .print-header {
+                text-align: center;
+                margin-bottom: 10mm;
             }
 
             .print-header h1 { font-size: 14pt !important; }
@@ -172,17 +177,15 @@
             </div>
         </main>
         
-        <section id="summary-container" class="relative mt-8 bg-white p-6 rounded-lg shadow-lg">
-             <div class="print-section">
-                <div class="print-header hidden">
-                    <h1 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h1>
-                    <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
-                    <p id="report-date" class="text-sm"></p>
-                </div>
+        <section id="summary-container" class="relative mt-8 bg-white p-6 rounded-lg shadow-lg print-section">
+             <div class="print-header hidden">
+                <h1 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h1>
+                <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
+                <p id="report-date" class="text-sm"></p>
              </div>
             <div class="flex justify-between items-center mb-4 no-print">
                 <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i>Resumo da Produção</h2>
-                <button id="print-report-btn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 no-print">
+                <button id="print-report-btn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
                     <i data-lucide="printer"></i> Imprimir Relatório
                 </button>
             </div>
