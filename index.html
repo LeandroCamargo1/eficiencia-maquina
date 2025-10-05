@@ -256,15 +256,108 @@
             });
         }
         
-        function renderAll() { renderPlanningList(); renderLaunchPanel(); renderSummaryTable(); }
-        function renderPlanningList() { /* ... */ }
-        function renderLaunchPanel() { /* ... */ }
-        function renderSummaryTable() { /* ... */ }
+        function renderAll() {
+            renderPlanningList();
+            renderLaunchPanel();
+            renderSummaryTable();
+        }
+
+        function renderPlanningList() {
+            planningList.innerHTML = '';
+            if (getSortedPlanning().length === 0) {
+                planningList.innerHTML = `<p class="text-slate-500 text-sm">Nenhum item planeado.</p>`;
+                return;
+            }
+            getSortedPlanning().forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center bg-slate-100 p-2 rounded';
+                div.innerHTML = `<div><span class="font-semibold">${item.machine}</span> - <span class="truncate">${item.product}</span></div>
+                                 <button class="remove-item-btn text-red-500 hover:text-red-700" data-id="${item.id}" data-product="${item.product}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+                planningList.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        function renderLaunchPanel() {
+            launchPanel.innerHTML = '';
+            if (getSortedPlanning().length === 0) {
+                launchPanel.innerHTML = `<div class="col-span-full text-center text-slate-500"><p>Adicione itens no painel de planeamento.</p></div>`;
+                return;
+            }
+            getSortedPlanning().forEach(item => {
+                const card = document.createElement('div');
+                const turnos = item.turnos || {};
+                card.className = 'bg-slate-50 border border-slate-200 p-4 rounded-lg shadow';
+                const turnoBtnClass = (tData) => tData && tData.realCycle ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700';
+                const turnoIcon = (tData) => tData && tData.realCycle ? '<i data-lucide="check" class="w-4 h-4 mr-1"></i>' : '';
+                card.innerHTML = `<h4 class="font-bold text-lg">${item.machine}</h4>
+                                  <p class="text-slate-600 mb-3 truncate" title="${item.product}">${item.product}</p>
+                                  <div class="grid grid-cols-3 gap-2">
+                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['1'])}" data-id="${item.id}" data-turno="1">${turnoIcon(turnos['1'])} 1º Turno</button>
+                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['2'])}" data-id="${item.id}" data-turno="2">${turnoIcon(turnos['2'])} 2º Turno</button>
+                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['3'])}" data-id="${item.id}" data-turno="3">${turnoIcon(turnos['3'])} 3º Turno</button>
+                                  </div>`;
+                launchPanel.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function getEfficiencyHtml(value) {
+            if (isNaN(value) || !isFinite(value)) return '<span>-</span>';
+            let colorClass = 'text-slate-800';
+            if (value < 85) { colorClass = 'text-red-600'; }
+            else if (value < 95) { colorClass = 'text-yellow-600'; }
+            else { colorClass = 'text-green-600'; }
+            return `<span class="${colorClass} font-bold">${value.toFixed(1)}%</span>`;
+        }
         
-        const openModal = (id, turno) => { /* ... */ };
+        function renderSummaryTable() {
+            summaryTableBody.innerHTML = '';
+            if (getSortedPlanning().length === 0) {
+                summaryTableBody.innerHTML = `<tr><td colspan="23" class="text-center p-4">Nenhum dado para exibir.</td></tr>`;
+                return;
+            }
+            getSortedPlanning().forEach(item => {
+                const row = document.createElement('tr');
+                const turnos = item.turnos || {};
+                row.className = 'bg-white border-b';
+                const totalQty = (turnos['1']?.qty || 0) + (turnos['2']?.qty || 0) + (turnos['3']?.qty || 0);
+                const cycleClass = (real, budget) => parseFloat(real) > parseFloat(budget) ? 'text-red-600 font-bold' : '';
+                let turnosHtml = '';
+                for (let i = 1; i <= 3; i++) {
+                    const turnoData = turnos[String(i)] || {};
+                    let machineEff = '-', moldEff = '-';
+                    if(turnoData.realCycle > 0 && item.budgeted_cycle > 0) machineEff = getEfficiencyHtml((item.budgeted_cycle / turnoData.realCycle) * 100);
+                    if(turnoData.realCavities > 0 && item.mold_cavities > 0) moldEff = getEfficiencyHtml((turnoData.realCavities / item.mold_cavities) * 100);
+                    turnosHtml += `<td class="${cycleClass(turnoData.realCycle, item.budgeted_cycle)}">${turnoData.realCycle || '-'}</td><td>${turnoData.realCavities || '-'}</td><td>${turnoData.qty || '-'}</td><td>${machineEff}</td><td>${moldEff}</td>`;
+                }
+                row.innerHTML = `<td>${item.machine}</td><td>${item.product}</td><td>${item.budgeted_cycle}</td><td>${item.mold_cavities}</td><td>${item.piece_weight}</td>${turnosHtml}<td class="font-bold bg-slate-100">${totalQty}</td><td>${item.machine}</td>`;
+                summaryTableBody.appendChild(row);
+            });
+        }
+        
+        const openModal = (id, turno) => {
+            const item = appData.planning.find(p => p.id === id);
+            if (!item) return;
+            const turnos = item.turnos || {};
+            const turnoData = turnos[turno] || {};
+            turnoModal.querySelector('#modal-title').textContent = `Lançar ${turno}º Turno - ${item.machine}`;
+            turnoForm.elements['modal-item-id'].value = id;
+            turnoForm.elements['modal-turno'].value = turno;
+            turnoForm.elements['real-cycle'].value = turnoData.realCycle || '';
+            turnoForm.elements['real-cavities'].value = turnoData.realCavities || item.mold_cavities;
+            turnoForm.elements['produced-qty'].value = turnoData.qty || '';
+            turnoModal.classList.remove('hidden');
+        };
         const closeModal = () => turnoModal.classList.add('hidden');
-        const showConfirm = (text, onConfirm) => { /* ... */ };
-        const hideConfirm = () => { /* ... */ };
+        
+        let confirmCallback = null;
+        const showConfirm = (text, onConfirm) => {
+            confirmModal.querySelector('#confirm-modal-text').textContent = text;
+            confirmCallback = onConfirm;
+            confirmModal.classList.remove('hidden');
+        };
+        const hideConfirm = () => { confirmModal.classList.add('hidden'); confirmCallback = null; };
 
         function setupEventListeners() {
             productSelect.addEventListener('change', e => {
@@ -292,11 +385,41 @@
                 planningForm.elements['product'].value = "";
             });
 
-            turnoForm.addEventListener('submit', async e => { /* ... */ });
+            turnoForm.addEventListener('submit', async e => {
+                e.preventDefault();
+                const id = turnoForm.elements['modal-item-id'].value;
+                const turno = turnoForm.elements['modal-turno'].value;
+                const item = appData.planning.find(p => p.id === id);
+                if (item) {
+                    if (!item.turnos) item.turnos = {};
+                    item.turnos[turno] = {
+                        realCycle: parseFloat(turnoForm.elements['real-cycle'].value),
+                        realCavities: parseInt(turnoForm.elements['real-cavities'].value),
+                        qty: turnoForm.elements['produced-qty'].value ? parseInt(turnoForm.elements['produced-qty'].value) : null
+                    };
+                    await saveData(item);
+                    closeModal();
+                }
+            });
+
             dateSelector.addEventListener('change', e => { selectedDate = e.target.value; loadData(selectedDate); });
-            printReportBtn.addEventListener('click', () => { /* ... */ });
+            printReportBtn.addEventListener('click', () => {
+                document.getElementById('report-date').textContent = `Data: ${new Date(selectedDate + 'T00:00:00Z').toLocaleDateString('pt-BR')}`;
+                document.querySelector('.print-header').classList.remove('hidden');
+                window.print();
+                document.querySelector('.print-header').classList.add('hidden');
+            });
             refreshDataBtn.addEventListener('click', () => loadData(selectedDate));
-            document.addEventListener('click', e => { /* ... */ });
+            document.addEventListener('click', e => {
+                const removeBtn = e.target.closest('.remove-item-btn');
+                if (removeBtn) {
+                    showConfirm(`Deseja remover "${removeBtn.dataset.product}"?`, () => handleRemoveItem(removeBtn.dataset.id));
+                }
+                const turnoBtn = e.target.closest('.turno-btn');
+                if (turnoBtn) {
+                    openModal(turnoBtn.dataset.id, turnoBtn.dataset.turno);
+                }
+            });
             [turnoModal.querySelector('#close-modal-btn'), turnoModal.querySelector('#cancel-modal-btn')].forEach(el => el.addEventListener('click', closeModal));
             document.getElementById('confirm-modal-ok-btn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); hideConfirm(); });
             document.getElementById('confirm-modal-cancel-btn').addEventListener('click', hideConfirm);
