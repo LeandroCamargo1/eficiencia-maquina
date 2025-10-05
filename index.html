@@ -9,87 +9,27 @@
     <style>
         /* Estilos personalizados */
         .slide-down { animation: slide-down 0.5s ease-out forwards; }
-        @keyframes slide-down {
-            from { opacity: 0; transform: translateY(-100%); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes slide-down { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
         button:disabled { cursor: not-allowed; opacity: 0.6; }
-
-        /* Estilos para o Toast Notification */
-        .toast {
-            animation: toast-in 0.5s, toast-out 0.5s 4.5s;
-        }
-        @keyframes toast-in {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes toast-out {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-
-        /* Estilo para o overlay de carregamento */
-        .loading-overlay {
-            position: absolute;
-            inset: 0;
-            background-color: rgba(255, 255, 255, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-
-        /* --- FORMATAÇÃO DE IMPRESSÃO PADRÃO (v3.4) --- */
+        .toast { animation: toast-in 0.5s, toast-out 0.5s 4.5s; }
+        @keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toast-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .loading-overlay { position: absolute; inset: 0; background-color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: 0.5rem; }
+        
         @media print {
-            @page {
-                size: A4 landscape;
-                margin: 15mm; 
-            }
-
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                font-size: 9pt;
-            }
-
+            @page { size: A4 landscape; margin: 15mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 9pt; }
             body * { visibility: hidden; }
             .print-section, .print-section * { visibility: visible; }
-            
-            .print-section {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-
-            .print-header {
-                text-align: center;
-                margin-bottom: 10mm;
-            }
-
+            .print-section { position: absolute; left: 0; top: 0; width: 100%; }
+            .print-header { text-align: center; margin-bottom: 10mm; }
             .print-header h1 { font-size: 14pt !important; }
             .print-header p { font-size: 10pt !important; }
-
             .no-print { display: none !important; }
-
-            #summary-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 8pt; 
-            }
-            #summary-table th,
-            #summary-table td {
-                border: 1px solid #ccc;
-                padding: 4px 6px; 
-                text-align: center;
-            }
-            
+            #summary-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+            #summary-table th, #summary-table td { border: 1px solid #ccc; padding: 4px 6px; text-align: center; }
             #summary-table th:nth-child(1), #summary-table td:nth-child(1),
-            #summary-table th:nth-child(2), #summary-table td:nth-child(2) {
-                text-align: left;
-            }
-            
-            /* Cores para impressão */
+            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { text-align: left; }
             #summary-table thead { background-color: #e5e7eb !important; }
             .bg-sky-100 { background-color: #e0f2fe !important; }
             .bg-amber-100 { background-color: #fef3c7 !important; }
@@ -103,153 +43,49 @@
 </head>
 <body class="bg-slate-100 text-slate-800">
 
-    <!-- Notificações (Toasts) -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2 no-print"></div>
-
-    <!-- Status de Conexão -->
-    <div id="connection-status" class="p-2 text-center text-white font-semibold fixed top-0 w-full z-50 transition-colors duration-500 bg-slate-800 no-print">
-        A inicializar...
-    </div>
+    <div id="connection-status" class="p-2 text-center text-white font-semibold fixed top-0 w-full z-50 transition-colors duration-500 bg-slate-800 no-print">A inicializar...</div>
 
     <div class="container mx-auto p-4 md:p-6 lg:p-8 pt-16">
-        
         <header class="text-center mb-6 no-print">
              <img src="https://hrukbkrzmabdrjyvpmff.supabase.co/storage/v1/object/public/logos/logo.svg" alt="Logo Hokkaido Plastics" class="mx-auto h-16 w-auto mb-4">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Dashboard de Produção Diária</h1>
             <p class="text-lg text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
         </header>
-        
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-md no-print">
             <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2">
-                    <label for="date-selector" class="font-semibold">Data:</label>
-                    <input type="date" id="date-selector" class="border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-cyan-500">
-                </div>
-                <button id="refresh-data-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold p-2 rounded-lg transition-colors flex items-center gap-2" title="Atualizar dados">
-                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                </button>
+                <div class="flex items-center gap-2"><label for="date-selector" class="font-semibold">Data:</label><input type="date" id="date-selector" class="border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-cyan-500"></div>
+                <button id="refresh-data-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold p-2 rounded-lg transition-colors flex items-center gap-2" title="Atualizar dados"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
             </div>
         </div>
-
         <main class="grid grid-cols-1 lg:grid-cols-5 gap-6 no-print">
             <div id="planning-container" class="relative lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
                 <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="text-cyan-600"></i>Planeamento do Dia</h2>
                 <form id="planning-form" class="space-y-4">
-                    <div>
-                        <label for="machine" class="block text-sm font-medium text-slate-700">Máquina</label>
-                        <select id="machine" name="machine" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></select>
-                    </div>
-                    <div>
-                        <label for="product" class="block text-sm font-medium text-slate-700">Produto</label>
-                        <select id="product" name="product" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm">
-                            <option value="" disabled selected>A carregar produtos...</option>
-                        </select>
-                    </div>
+                    <div><label for="machine" class="block text-sm font-medium text-slate-700">Máquina</label><select id="machine" name="machine" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"></select></div>
+                    <div><label for="product" class="block text-sm font-medium text-slate-700">Produto</label><select id="product" name="product" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"><option value="" disabled selected>A carregar produtos...</option></select></div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="budgeted-cycle" class="block text-sm font-medium text-slate-700">Ciclo (s)</label>
-                            <input type="number" id="budgeted-cycle" name="budgeted-cycle" required readonly class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm bg-slate-100">
-                        </div>
-                        <div>
-                            <label for="mold-cavities" class="block text-sm font-medium text-slate-700">Cavidades</label>
-                            <input type="number" id="mold-cavities" name="mold-cavities" required readonly class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm bg-slate-100">
-                        </div>
-                         <div>
-                            <label for="piece-weight" class="block text-sm font-medium text-slate-700">Peso Peça (g)</label>
-                            <input type="number" id="piece-weight" name="piece-weight" required readonly class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm bg-slate-100">
-                        </div>
+                        <div><label for="budgeted-cycle" class="block text-sm font-medium text-slate-700">Ciclo (s)</label><input type="number" id="budgeted-cycle" name="budgeted-cycle" required readonly class="bg-slate-100 mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div>
+                        <div><label for="mold-cavities" class="block text-sm font-medium text-slate-700">Cavidades</label><input type="number" id="mold-cavities" name="mold-cavities" required readonly class="bg-slate-100 mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div>
+                        <div><label for="piece-weight" class="block text-sm font-medium text-slate-700">Peso Peça (g)</label><input type="number" id="piece-weight" name="piece-weight" required readonly class="bg-slate-100 mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div>
                     </div>
-                    <button type="submit" id="add-item-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="plus-circle"></i> Adicionar ao Planeamento
-                    </button>
+                    <button type="submit" id="add-item-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><i data-lucide="plus-circle"></i> Adicionar</button>
                 </form>
-                <hr class="my-6">
-                <h3 class="text-lg font-semibold mb-3">Itens Planeados</h3>
-                <div id="planning-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                <hr class="my-6"><h3 class="text-lg font-semibold mb-3">Itens Planeados</h3><div id="planning-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
             </div>
-
-            <div id="launch-panel-container" class="relative lg:col-span-3 bg-white p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="play-square" class="text-cyan-600"></i>Painel de Lançamento</h2>
-                <div id="launch-panel" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2"></div>
-            </div>
+            <div id="launch-panel-container" class="relative lg:col-span-3 bg-white p-6 rounded-lg shadow-lg"><h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="play-square" class="text-cyan-600"></i> Painel de Lançamento</h2><div id="launch-panel" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2"></div></div>
         </main>
-        
         <section id="summary-container" class="relative mt-8 bg-white p-6 rounded-lg shadow-lg print-section">
-             <div class="print-header hidden">
-                <h1 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h1>
-                <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
-                <p id="report-date" class="text-sm"></p>
-             </div>
-            <div class="flex justify-between items-center mb-4 no-print">
-                <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i>Resumo da Produção</h2>
-                <button id="print-report-btn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
-                    <i data-lucide="printer"></i> Imprimir Relatório
-                </button>
-            </div>
-            <div class="overflow-x-auto">
-                <table id="summary-table" class="w-full text-sm text-left text-slate-500">
-                    <thead class="text-xs text-slate-700 uppercase bg-slate-200">
-                        <tr>
-                            <th scope="col" rowspan="2">Máq.</th><th scope="col" rowspan="2">Produto</th>
-                            <th scope="col" colspan="3">Planeado</th>
-                            <th scope="col" colspan="5">1º Turno</th>
-                            <th scope="col" colspan="5">2º Turno</th>
-                            <th scope="col" colspan="5">3º Turno</th>
-                            <th scope="col" rowspan="2">Total</th><th scope="col" rowspan="2">Máq.</th>
-                        </tr>
-                        <tr>
-                            <th>Ciclo</th><th>Cav.</th><th>Peso</th>
-                            <th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th>
-                            <th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th>
-                            <th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+             <div class="print-header hidden"><h1 class="text-2xl font-bold">Relatório de Produção</h1><p>HOKKAIDO PLASTICS</p><p id="report-date"></p></div>
+            <div class="flex justify-between items-center mb-4 no-print"><h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i> Resumo da Produção</h2><button id="print-report-btn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"><i data-lucide="printer"></i> Imprimir</button></div>
+            <div class="overflow-x-auto"><table id="summary-table" class="w-full text-sm"><thead><tr><th rowspan="2">Máq.</th><th rowspan="2">Produto</th><th colspan="3">Planeado</th><th colspan="5">1º Turno</th><th colspan="5">2º Turno</th><th colspan="5">3º Turno</th><th rowspan="2">Total</th><th rowspan="2">Máq.</th></tr><tr><th>Ciclo</th><th>Cav.</th><th>Peso</th><th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th><th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th><th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th></tr></thead><tbody></tbody></table></div>
         </section>
     </div>
-
-    <!-- Modais -->
-    <div id="turno-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md m-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold" id="modal-title">Lançar Dados do Turno</h3>
-                <button id="close-modal-btn" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-6 h-6"></i></button>
-            </div>
-            <form id="turno-form">
-                <input type="hidden" name="modal-item-id">
-                <input type="hidden" name="modal-turno">
-                <div class="space-y-4">
-                    <div><label class="block text-sm">Ciclo Real (s)</label><input type="number" name="real-cycle" required min="0.1" step="0.1" class="mt-1 block w-full p-2 border-slate-300 rounded-md"></div>
-                    <div><label class="block text-sm">Cavidades Reais</label><input type="number" name="real-cavities" required min="1" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md"></div>
-                    <div><label class="block text-sm">Quantidade Produzida (Opcional)</label><input type="number" name="produced-qty" min="0" step="1" class="mt-1 block w-full p-2 border-slate-300 rounded-md"></div>
-                </div>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" id="cancel-modal-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                    <button type="submit" id="save-turno-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg">Salvar Dados</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm m-4 text-center">
-            <div class="flex justify-center mb-4"><div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center"><i data-lucide="alert-triangle" class="w-8 h-8 text-yellow-500"></i></div></div>
-            <h3 class="text-lg font-bold">Tem a certeza?</h3>
-            <p id="confirm-modal-text" class="text-sm text-slate-600 my-2"></p>
-            <div class="mt-6 flex justify-center gap-3">
-                <button id="confirm-modal-cancel-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                <button id="confirm-modal-ok-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Confirmar</button>
-            </div>
-        </div>
-    </div>
+    <div id="turno-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md m-4"><div class="flex justify-between items-center mb-4"><h3 id="modal-title" class="text-xl font-bold">Lançar Dados</h3><button id="close-modal-btn" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-6 h-6"></i></button></div><form id="turno-form"><input type="hidden" name="modal-item-id"><input type="hidden" name="modal-turno"><div class="space-y-4"><div><label class="block text-sm font-medium text-slate-700">Ciclo Real (s)</label><input type="number" name="real-cycle" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div><div><label class="block text-sm font-medium text-slate-700">Cavidades Reais</label><input type="number" name="real-cavities" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div><div><label class="block text-sm font-medium text-slate-700">Qtd. Produzida</label><input type="number" name="produced-qty" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div></div><div class="mt-6 flex justify-end gap-3"><button type="button" id="cancel-modal-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button><button type="submit" id="save-turno-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg">Salvar</button></div></form></div></div>
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm m-4 text-center"><div class="flex justify-center mb-4"><div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center"><i data-lucide="alert-triangle" class="w-8 h-8 text-yellow-500"></i></div></div><h3 class="text-lg font-bold">Tem a certeza?</h3><p id="confirm-modal-text" class="text-sm text-slate-600 my-2"></p><div class="mt-6 flex justify-center gap-3"><button id="confirm-modal-cancel-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button><button id="confirm-modal-ok-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Confirmar</button></div></div></div>
 
     <script type="module">
-        // =================================================================================
-        // --- CONFIGURAÇÃO E INICIALIZAÇÃO ---
-        // =================================================================================
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxnS-qV6Xy48Pp7EuaRV4iHozDaKDr20yEH29P_qPasBCCfqR6chBxLv4xoeQ6e3Iq/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvJkKSJX7kma56u_tQdDlOP4HaDFqSE0_WZ6g-q7EkxdXfNK6O1b99z8ov8PoaMvwD/exec';
         
         const machineSelect = document.getElementById('machine');
         const productSelect = document.getElementById('product');
@@ -274,13 +110,14 @@
         
         document.addEventListener('DOMContentLoaded', async () => {
             if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('COLE_A_URL')) {
-                connectionStatus.textContent = 'Conectado ao Google Sheets';
-                connectionStatus.classList.replace('bg-slate-800', 'bg-green-600');
+                connectionStatus.textContent = 'A conectar ao Google Sheets...';
                 setupInitialUI();
                 await loadProductsMaster();
                 await loadData(selectedDate);
+                connectionStatus.textContent = 'Conectado';
+                connectionStatus.classList.replace('bg-slate-800', 'bg-green-600');
             } else {
-                connectionStatus.textContent = 'Configure a URL do Google Apps Script no código!';
+                connectionStatus.textContent = 'URL do Google Apps Script não configurada!';
                 connectionStatus.classList.replace('bg-slate-800', 'bg-yellow-600');
             }
             lucide.createIcons();
@@ -297,113 +134,140 @@
             dateSelector.value = selectedDate;
         }
 
-        // =================================================================================
-        // --- FUNÇÕES DE DADOS (GOOGLE SHEETS API) ---
-        // =================================================================================
-        async function apiFetch(url, options = {}) {
-            const btn = options.body ? (JSON.parse(options.body).item?.id ? saveTurnoBtn : addItemBtn) : refreshDataBtn.querySelector('i');
-            if (btn) btn.disabled = true;
-            if (btn === refreshDataBtn.querySelector('i')) btn.classList.add('animate-spin');
-            
-            const overlayElements = [
-                document.getElementById('planning-container'),
-                document.getElementById('launch-panel-container'),
-                document.getElementById('summary-container')
-            ];
-            
-            if (options.method !== 'POST') {
-                 overlayElements.forEach(el => setLoadingOverlay(el, true));
-            }
+        async function apiFetch(url, options = {}, elementsToOverlay = []) {
+            const elements = Array.isArray(elementsToOverlay) ? elementsToOverlay : [elementsToOverlay];
+            let isPost = options.body;
+            let btnToDisable = isPost ? (JSON.parse(options.body).item?.id ? saveTurnoBtn : addItemBtn) : refreshDataBtn;
+
+            if (btnToDisable) btnToDisable.disabled = true;
+            if (!isPost && btnToDisable.querySelector('i')) btnToDisable.querySelector('i').classList.add('animate-spin');
+            elements.forEach(el => setLoadingOverlay(el, true));
 
             try {
                 const response = await fetch(url, options);
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Falha na resposta da rede: ${response.statusText} - ${errorText}`);
+                    let errorJson = {};
+                    try { errorJson = JSON.parse(errorText); } catch(e){}
+                    throw new Error(errorJson.error || `Falha na resposta da rede: ${response.statusText}`);
                 }
                 return await response.json();
             } finally {
-                if (btn) btn.disabled = false;
-                if (btn === refreshDataBtn.querySelector('i')) setTimeout(() => btn.classList.remove('animate-spin'), 500);
-                overlayElements.forEach(el => setLoadingOverlay(el, false));
+                if (btnToDisable) btnToDisable.disabled = false;
+                if (!isPost && btnToDisable.querySelector('i')) setTimeout(() => btnToDisable.querySelector('i').classList.remove('animate-spin'), 500);
+                elements.forEach(el => setLoadingOverlay(el, false));
             }
         }
-
+        
         async function loadProductsMaster() {
             try {
-                productsMaster = await apiFetch(`${GOOGLE_SCRIPT_URL}?sheet=products_master`);
+                productsMaster = await apiFetch(`${GOOGLE_SCRIPT_URL}?sheet=products_master`, {}, document.getElementById('planning-container'));
                 populateProductsDropdown();
             } catch (error) {
-                console.error("Erro ao carregar catálogo de produtos:", error);
-                showToast('Falha ao carregar catálogo de produtos.', 'error');
+                console.error("Erro ao carregar catálogo:", error);
+                showToast(`Falha ao carregar catálogo: ${error.message}`, 'error');
             }
         }
 
         async function loadData(date) {
             try {
-                appData.planning = await apiFetch(`${GOOGLE_SCRIPT_URL}?sheet=production_plan&date=${date}`);
+                const elements = [document.getElementById('summary-container'), document.getElementById('launch-panel-container')];
+                appData.planning = await apiFetch(`${GOOGLE_SCRIPT_URL}?sheet=production_plan&date=${date}`, {}, elements);
                 renderAll();
             } catch (error) {
-                console.error("ERRO DETALHADO AO CARREGAR:", error);
+                console.error("ERRO AO CARREGAR DADOS:", error);
                 showToast(error.message || 'Falha ao carregar dados.', 'error');
             }
         }
 
         async function saveData(item) {
             try {
-                const response = await apiFetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors', // Necessário para Apps Script
-                    redirect: 'follow',
-                    body: JSON.stringify({ action: 'upsert', item: item })
-                });
+                await apiFetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'upsert', item }) }, document.getElementById('planning-container'));
                 showToast('Dados salvos com sucesso!', 'success');
-                await loadData(selectedDate); // Recarrega para obter o ID gerado
+                await loadData(selectedDate);
             } catch (error) {
-                console.error("ERRO DETALHADO AO SALVAR:", error);
+                console.error("ERRO AO SALVAR:", error);
                 showToast(error.message || 'Falha ao salvar!', 'error');
             }
         }
 
         async function handleRemoveItem(id) {
             try {
-                 await apiFetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    redirect: 'follow',
-                    body: JSON.stringify({ action: 'delete', id: id })
-                });
-                showToast('Item removido com sucesso.', 'info');
+                await apiFetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id }) }, document.getElementById('planning-container'));
+                showToast('Item removido.', 'info');
                 await loadData(selectedDate);
             } catch (error) {
-                console.error("ERRO DETALHADO AO REMOVER:", error);
-                showToast(error.message || 'Falha ao remover item.', 'error');
+                console.error("ERRO AO REMOVER:", error);
+                showToast(error.message || 'Falha ao remover.', 'error');
+            }
+        }
+        
+        function getProductionDateString() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            if (currentHour < 7) {
+                const yesterday = new Date(now);
+                yesterday.setDate(now.getDate() - 1);
+                return yesterday.toISOString().split('T')[0];
+            }
+            return now.toISOString().split('T')[0];
+        }
+
+        function showToast(message, type = 'info') {
+            const icons = { info: 'info', success: 'check-circle-2', warning: 'alert-triangle', error: 'alert-circle' };
+            const colors = { info: 'bg-blue-500', success: 'bg-green-500', warning: 'bg-yellow-500', error: 'bg-red-500' };
+            const toast = document.createElement('div');
+            toast.className = `toast flex items-center gap-3 text-white p-4 rounded-lg shadow-lg ${colors[type]}`;
+            toast.innerHTML = `<i data-lucide="${icons[type]}"></i><p>${message}</p>`;
+            toastContainer.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function setLoadingOverlay(element, show) {
+            if (!element) return;
+            let overlay = element.querySelector('.loading-overlay');
+            if (show) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.className = 'loading-overlay';
+                    overlay.innerHTML = `<i data-lucide="loader-2" class="w-8 h-8 animate-spin text-cyan-600"></i>`;
+                    element.appendChild(overlay);
+                    lucide.createIcons();
+                }
+            } else if (overlay) {
+                overlay.remove();
             }
         }
 
-        // =================================================================================
-        // --- RENDERIZAÇÃO E UI ---
-        // =================================================================================
-        function getProductionDateString() { /* ... */ }
-        function showToast(message, type = 'info') { /* ... */ }
-        function setLoadingOverlay(element, show) { /* ... */ }
-        function getSortedPlanning() { /* ... */ }
-        function populateProductsDropdown() { /* ... */ }
-        function renderAll() { /* ... */ }
+        function getSortedPlanning() {
+            return appData.planning.slice().sort((a, b) => parseInt(a.machine.split('-')[1]) - parseInt(b.machine.split('-')[1]));
+        }
+        
+        function populateProductsDropdown() {
+             productSelect.innerHTML = '<option value="" disabled selected>Selecione um produto...</option>';
+            productsMaster.forEach(p => {
+                if (p.product_name) {
+                    const option = document.createElement('option');
+                    option.value = p.product_name;
+                    option.textContent = p.product_name;
+                    productSelect.appendChild(option);
+                }
+            });
+        }
+        
+        function renderAll() { renderPlanningList(); renderLaunchPanel(); renderSummaryTable(); }
         function renderPlanningList() { /* ... */ }
         function renderLaunchPanel() { /* ... */ }
-        function getEfficiencyHtml(value) { /* ... */ }
         function renderSummaryTable() { /* ... */ }
+        
         const openModal = (id, turno) => { /* ... */ };
         const closeModal = () => turnoModal.classList.add('hidden');
         const showConfirm = (text, onConfirm) => { /* ... */ };
         const hideConfirm = () => { /* ... */ };
-        
-        // =================================================================================
-        // --- EVENT LISTENERS ---
-        // =================================================================================
+
         function setupEventListeners() {
-             productSelect.addEventListener('change', e => {
+            productSelect.addEventListener('change', e => {
                 const p = productsMaster.find(p => p.product_name === e.target.value);
                 if (p) {
                     planningForm.elements['budgeted-cycle'].value = p.budgeted_cycle || '';
@@ -411,10 +275,11 @@
                     planningForm.elements['piece-weight'].value = p.piece_weight || '';
                 }
             });
+
             planningForm.addEventListener('submit', async e => {
                 e.preventDefault();
                 const formData = new FormData(planningForm);
-                const newItem = {
+                await saveData({
                     date: selectedDate,
                     machine: formData.get('machine'),
                     product: formData.get('product'),
@@ -422,47 +287,19 @@
                     mold_cavities: parseInt(formData.get('mold-cavities')),
                     piece_weight: parseFloat(formData.get('piece-weight')),
                     turnos: { '1': {}, '2': {}, '3': {} }
-                };
-                await saveData(newItem);
+                });
                 planningForm.reset();
                 planningForm.elements['product'].value = "";
             });
-            turnoForm.addEventListener('submit', async e => {
-                e.preventDefault();
-                const id = turnoForm.elements['modal-item-id'].value;
-                const turno = turnoForm.elements['modal-turno'].value;
-                const item = appData.planning.find(p => p.id === id);
-                if (item) {
-                    item.turnos[turno] = {
-                        realCycle: parseFloat(turnoForm.elements['real-cycle'].value),
-                        realCavities: parseInt(turnoForm.elements['real-cavities'].value),
-                        qty: turnoForm.elements['produced-qty'].value ? parseInt(turnoForm.elements['produced-qty'].value) : null
-                    };
-                    await saveData(item);
-                    closeModal();
-                }
-            });
+
+            turnoForm.addEventListener('submit', async e => { /* ... */ });
             dateSelector.addEventListener('change', e => { selectedDate = e.target.value; loadData(selectedDate); });
-            printReportBtn.addEventListener('click', () => {
-                document.getElementById('report-date').textContent = `Data: ${new Date(selectedDate + 'T00:00:00Z').toLocaleDateString('pt-BR')}`;
-                document.querySelector('.print-header').classList.remove('hidden');
-                window.print();
-                document.querySelector('.print-header').classList.add('hidden');
-            });
+            printReportBtn.addEventListener('click', () => { /* ... */ });
             refreshDataBtn.addEventListener('click', () => loadData(selectedDate));
-            document.addEventListener('click', e => {
-                if (e.target.closest('.remove-item-btn')) {
-                    const btn = e.target.closest('.remove-item-btn');
-                    showConfirm(`Deseja realmente remover "${btn.dataset.product}"?`, () => handleRemoveItem(btn.dataset.id));
-                }
-                if (e.target.closest('.turno-btn')) {
-                    const btn = e.target.closest('.turno-btn');
-                    openModal(btn.dataset.id, btn.dataset.turno);
-                }
-            });
+            document.addEventListener('click', e => { /* ... */ });
             [turnoModal.querySelector('#close-modal-btn'), turnoModal.querySelector('#cancel-modal-btn')].forEach(el => el.addEventListener('click', closeModal));
-            confirmModal.querySelector('#confirm-modal-ok-btn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); hideConfirm(); });
-            confirmModal.querySelector('#confirm-modal-cancel-btn').addEventListener('click', hideConfirm);
+            document.getElementById('confirm-modal-ok-btn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); hideConfirm(); });
+            document.getElementById('confirm-modal-cancel-btn').addEventListener('click', hideConfirm);
         }
     </script>
 </body>
