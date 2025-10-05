@@ -41,23 +41,17 @@
             z-index: 10;
         }
 
-        /* --- OTIMIZAÇÃO DE IMPRESSÃO FINAL (v3.2) --- */
+        /* --- FORMATAÇÃO DE IMPRESSÃO PADRÃO (v3.3) --- */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 0; /* Zera as margens da página para controlo total */
-            }
-
-            html, body {
-                width: 297mm;
-                height: 210mm;
-                margin: 0;
-                padding: 0;
+                margin: 15mm; 
             }
 
             body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                font-size: 9pt;
             }
 
             body * { visibility: hidden; }
@@ -68,81 +62,29 @@
                 left: 0;
                 top: 0;
                 width: 100%;
-                height: 100%;
-                display: flex; /* USA FLEXBOX PARA CONTROLO TOTAL */
-                flex-direction: column;
-                padding: 3mm; /* Margem de segurança interna */
-                box-sizing: border-box;
             }
 
-            .print-header { display: none !important; } /* Esconde o cabeçalho principal */
-
-            .print-title-bar {
-                display: flex !important;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 2mm;
-                padding: 0 1mm; /* Pequeno padding para alinhar com a tabela */
-            }
-             .print-title-bar h2 { font-size: 10pt; font-weight: bold; }
-             .print-title-bar p { font-size: 9pt; font-weight: bold; }
+            .print-header h1 { font-size: 14pt !important; }
+            .print-header p { font-size: 10pt !important; }
 
             .no-print { display: none !important; }
-
-            .overflow-x-auto {
-                flex-grow: 1; /* Faz a tabela ocupar o espaço restante */
-                overflow: visible; /* Remove a barra de scroll na impressão */
-            }
 
             #summary-table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 6.5pt;
-                table-layout: fixed; 
+                font-size: 8pt; 
             }
             #summary-table th,
             #summary-table td {
                 border: 1px solid #ccc;
-                padding: 1.2px; /* Espaçamento mínimo para compactação vertical */
+                padding: 4px 6px; 
                 text-align: center;
-                white-space: nowrap; 
-                overflow: hidden;      
-                text-overflow: ellipsis;
             }
             
-            /* --- Distribuição de Largura das Colunas (Soma = 100%) --- */
-            #summary-table th:nth-child(1), #summary-table td:nth-child(1) { width: 4%; text-align: left; padding-left: 2px;}
-            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { width: 12%; text-align: left; padding-left: 2px; }
-            
-            /* Planeado */
-            #summary-table th:nth-child(3), #summary-table td:nth-child(3) { width: 4%; }
-            #summary-table th:nth-child(4), #summary-table td:nth-child(4) { width: 4%; }
-            #summary-table th:nth-child(5), #summary-table td:nth-child(5) { width: 4%; }
-
-            /* Turnos */
-            #summary-table th:nth-child(6),  #summary-table td:nth-child(6),
-            #summary-table th:nth-child(11), #summary-table td:nth-child(11),
-            #summary-table th:nth-child(16), #summary-table td:nth-child(16) { width: 4%; } /* Ciclo Real */
-
-            #summary-table th:nth-child(7),  #summary-table td:nth-child(7),
-            #summary-table th:nth-child(12), #summary-table td:nth-child(12),
-            #summary-table th:nth-child(17), #summary-table td:nth-child(17) { width: 4%; } /* Cav. Real */
-
-            #summary-table th:nth-child(8),  #summary-table td:nth-child(8),
-            #summary-table th:nth-child(13), #summary-table td:nth-child(13),
-            #summary-table th:nth-child(18), #summary-table td:nth-child(18) { width: 6%; } /* Qtd. */
-
-            #summary-table th:nth-child(9),  #summary-table td:nth-child(9),
-            #summary-table th:nth-child(14), #summary-table td:nth-child(14),
-            #summary-table th:nth-child(19), #summary-table td:nth-child(19) { width: 7%; } /* Ef. Máquina */
-            
-            #summary-table th:nth-child(10), #summary-table td:nth-child(10),
-            #summary-table th:nth-child(15), #summary-table td:nth-child(15),
-            #summary-table th:nth-child(20), #summary-table td:nth-child(20) { width: 4%; } /* Ef. Molde */
-            
-            /* Total & Máq Final */
-            #summary-table th:nth-child(21), #summary-table td:nth-child(21) { width: 6%; font-weight: bold; }
-            #summary-table th:nth-child(22), #summary-table td:nth-child(22) { width: 4%; }
+            #summary-table th:nth-child(1), #summary-table td:nth-child(1),
+            #summary-table th:nth-child(2), #summary-table td:nth-child(2) {
+                text-align: left;
+            }
             
             /* Cores para impressão */
             #summary-table thead { background-color: #e5e7eb !important; }
@@ -235,10 +177,7 @@
                 <div class="print-header hidden">
                     <h1 class="text-2xl font-bold text-slate-900">Relatório de Produção Diária</h1>
                     <p class="text-md text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
-                </div>
-                <div class="print-title-bar hidden justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold">Eficiência x Máquina</h2>
-                    <p id="report-date" class="text-sm font-semibold"></p>
+                    <p id="report-date" class="text-sm"></p>
                 </div>
              </div>
             <div class="flex justify-between items-center mb-4 no-print">
@@ -630,11 +569,15 @@
         }
         
         function getEfficiencyHtml(value) {
-            if (isNaN(value) || !isFinite(value)) return '-';
+            if (isNaN(value) || !isFinite(value)) return '<span>-</span>';
             let colorClass = 'text-slate-800';
-            if (value >= 95) colorClass = 'text-green-600';
-            else if (value >= 85) colorClass = 'text-yellow-600';
-            else colorClass = 'text-red-600';
+            if (value < 85) {
+                colorClass = 'text-red-600';
+            } else if (value < 95) {
+                colorClass = 'text-yellow-600';
+            } else {
+                colorClass = 'text-green-600';
+            }
             return `<span class="${colorClass} font-bold">${value.toFixed(1)}%</span>`;
         }
 
@@ -652,6 +595,7 @@
                 for (let i = 1; i <= 3; i++) {
                     const turnoData = turnos[String(i)];
                     let machineEff = '-', moldEff = '-';
+                    
                     if(turnoData && turnoData.realCycle > 0 && item.budgeted_cycle > 0) {
                         machineEff = getEfficiencyHtml((item.budgeted_cycle / turnoData.realCycle) * 100);
                     }
@@ -675,6 +619,7 @@
                                  <td class="px-4 py-2 border font-bold bg-slate-100">${totalQty}</td>
                                  <td class="px-4 py-2 border">${item.machine}</td>`;
                 summaryTableBody.appendChild(row);
+                lucide.createIcons();
             });
         }
         
@@ -769,7 +714,7 @@
                 });
             });
 
-            // Listeners dinâmicos para botões nos cartões e na lista
+            // Listeners dinâmicos
             document.addEventListener('click', (e) => {
                 if (e.target.closest('.remove-item-btn')) {
                     const btn = e.target.closest('.remove-item-btn');
