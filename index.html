@@ -1,433 +1,529 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Produção Diária - Hokkaido Plastics</title>
+    <title>Simulação 3D da Catapulta - LSS (v4)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Bibliotecas 3D e Física -->
+    <!-- ESTAS BIBLIOTECAS PRECISAM SER VISTAS GLOBALMENTE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+
     <style>
-        /* Estilos personalizados */
-        .slide-down { animation: slide-down 0.5s ease-out forwards; }
-        @keyframes slide-down { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
-        button:disabled { cursor: not-allowed; opacity: 0.6; }
-        .toast { animation: toast-in 0.5s, toast-out 0.5s 4.5s; }
-        @keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes toast-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-        .loading-overlay { position: absolute; inset: 0; background-color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: 0.5rem; }
-        
-        @media print {
-            @page { size: A4 landscape; margin: 15mm; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 9pt; }
-            body * { visibility: hidden; }
-            .print-section, .print-section * { visibility: visible; }
-            .print-section { position: absolute; left: 0; top: 0; width: 100%; }
-            .print-header { text-align: center; margin-bottom: 10mm; }
-            .print-header h1 { font-size: 14pt !important; }
-            .print-header p { font-size: 10pt !important; }
-            .no-print { display: none !important; }
-            #summary-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
-            #summary-table th, #summary-table td { border: 1px solid #ccc; padding: 4px 6px; text-align: center; }
-            #summary-table th:nth-child(1), #summary-table td:nth-child(1),
-            #summary-table th:nth-child(2), #summary-table td:nth-child(2) { text-align: left; }
-            #summary-table thead { background-color: #e5e7eb !important; }
-            .bg-sky-100 { background-color: #e0f2fe !important; }
-            .bg-amber-100 { background-color: #fef3c7 !important; }
-            .bg-indigo-100 { background-color: #e0e7ff !important; }
-            .bg-slate-100 { background-color: #f1f5f9 !important; }
-            .text-green-600 { color: #059669 !important; }
-            .text-yellow-600 { color: #ca8a04 !important; }
-            .text-red-600 { color: #dc2626 !important; font-weight: bold !important; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: #111827; /* Fundo mais escuro */
+        }
+        canvas {
+            display: block;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(17, 24, 39, 0.8); /* Cor do fundo */
+            border: 1px solid rgba(55, 65, 81, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px 20px;
+            width: 90%;
+            max-width: 600px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .control-group label {
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #d1d5db; /* Cor do texto */
+        }
+        .control-group input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #374151; /* Fundo do slider */
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .control-group input[type="range"]:hover {
+            opacity: 1;
+        }
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .control-group span {
+            font-size: 0.8rem;
+            text-align: right;
+            color: #9ca3af;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        #reset-button {
+            background: #ef4444;
+        }
+        #reset-button:hover {
+            background: #dc2626;
+        }
+        #distance-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(55, 65, 81, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body>
 
-    <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2 no-print"></div>
-    <div id="connection-status" class="p-2 text-center text-white font-semibold fixed top-0 w-full z-50 transition-colors duration-500 bg-slate-800 no-print">A inicializar...</div>
+    <div id="distance-display">Distância (Y): 0.00 m</div>
 
-    <div class="container mx-auto p-4 md:p-6 lg:p-8 pt-16">
-        <header class="text-center mb-6 no-print">
-             <img src="https://hrukbkrzmabdrjyvpmff.supabase.co/storage/v1/object/public/logos/logo.svg" alt="Logo Hokkaido Plastics" class="mx-auto h-16 w-auto mb-4">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Dashboard de Produção Diária</h1>
-            <p class="text-lg text-cyan-700 font-semibold">HOKKAIDO PLASTICS</p>
-        </header>
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-md no-print">
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2"><label for="date-selector" class="font-semibold">Data:</label><input type="date" id="date-selector" class="border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-cyan-500"></div>
-                <button id="refresh-data-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold p-2 rounded-lg transition-colors flex items-center gap-2" title="Atualizar dados"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+    <!-- Canvas da Simulação -->
+    <canvas id="simulation"></canvas>
+
+    <!-- Painel de Controle (Variáveis "X") -->
+    <div id="controls">
+        <div class="control-group">
+            <label for="tension">X1: Tensão (Impulso)</label>
+            <div class="flex items-center space-x-2">
+                <input type="range" id="tension" min="15" max="40" value="25" step="1">
+                <span id="tension-value">25</span>
             </div>
         </div>
-        <main class="grid grid-cols-1 lg:grid-cols-5 gap-6 no-print">
-            <div id="planning-container" class="relative lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="clipboard-list" class="text-cyan-600"></i>Planeamento do Dia</h2>
-                <form id="planning-form" class="space-y-4">
-                    <div><label for="machine" class="block text-sm font-medium text-slate-700">Máquina</label><select id="machine" name="machine" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></select></div>
-                    <div><label for="product" class="block text-sm font-medium text-slate-700">Produto</label><select id="product" name="product" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"><option value="" disabled selected>A carregar produtos...</option></select></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label for="budgeted-cycle" class="block text-sm font-medium text-slate-700">Ciclo (s)</label><input type="number" id="budgeted-cycle" name="budgeted-cycle" required readonly class="bg-slate-100 mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div>
-                        <div><label for="mold-cavities" class="block text-sm font-medium text-slate-700">Cavidades</label><input type="number" id="mold-cavities" name="mold-cavities" required readonly class="bg-slate-100 mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div>
-                        <div><label for="piece-weight" class="block text-sm font-medium text-slate-700">Peso Peça (g)</label><input type="number" id="piece-weight" name="piece-weight" required readonly class="bg-slate-100 mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div>
-                    </div>
-                    <button type="submit" id="add-item-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2"><i data-lucide="plus-circle"></i> Adicionar</button>
-                </form>
-                <hr class="my-6"><h3 class="text-lg font-semibold mb-3">Itens Planeados</h3><div id="planning-list" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+        <div class="control-group">
+            <label for="stopAngle">X3: Ângulo da Barra de Parada</label>
+            <div class="flex items-center space-x-2">
+                <input type="range" id="stopAngle" min="-30" max="30" value="0" step="5">
+                <span id="stopAngle-value">0°</span>
             </div>
-            <div id="launch-panel-container" class="relative lg:col-span-3 bg-white p-6 rounded-lg shadow-lg"><h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="play-square" class="text-cyan-600"></i> Painel de Lançamento</h2><div id="launch-panel" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2"></div></div>
-        </main>
-        <section id="summary-container" class="relative mt-8 bg-white p-6 rounded-lg shadow-lg print-section">
-             <div class="print-header hidden"><h1 class="text-2xl">Relatório de Produção</h1><p>HOKKAIDO PLASTICS</p><p id="report-date"></p></div>
-            <div class="flex justify-between items-center mb-4 no-print"><h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="table-2" class="text-cyan-600"></i> Resumo da Produção</h2><button id="print-report-btn" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"><i data-lucide="printer"></i> Imprimir</button></div>
-            <div class="overflow-x-auto"><table id="summary-table" class="w-full text-sm"><thead><tr><th rowspan="2">Máq.</th><th rowspan="2">Produto</th><th colspan="3">Planeado</th><th colspan="5">1º Turno</th><th colspan="5">2º Turno</th><th colspan="5">3º Turno</th><th rowspan="2">Total</th><th rowspan="2">Máq.</th></tr><tr><th>Ciclo</th><th>Cav.</th><th>Peso</th><th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th><th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th><th>Ciclo Real</th><th>Cav. Real</th><th>Qtd.</th><th>Ef. Máquina</th><th>Ef. Molde</th></tr></thead><tbody></tbody></table></div>
-        </section>
+        </div>
+        <div class="control-group">
+            <label for="pullAngle">X2: Ângulo de Puxada</label>
+            <div class="flex items-center space-x-2">
+                <input type="range" id="pullAngle" min="30" max="90" value="70" step="5">
+                <span id="pullAngle-value">70°</span>
+            </div>
+        </div>
+        <div class="control-group">
+            <label for="gravity">Bônus: Gravidade (m/s²)</label>
+            <div class="flex items-center space-x-2">
+                <input type="range" id="gravity" min="1" max="20" value="9.8" step="0.1">
+                <span id="gravity-value">-9.8</span>
+            </div>
+        </div>
+        <button id="launch-button">Lançar</button>
+        <button id="reset-button">Resetar</button>
     </div>
-    <div id="turno-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md m-4"><div class="flex justify-between items-center mb-4"><h3 id="modal-title" class="text-xl font-bold">Lançar Dados</h3><button id="close-modal-btn" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-6 h-6"></i></button></div><form id="turno-form"><input type="hidden" name="modal-item-id"><input type="hidden" name="modal-turno"><div class="space-y-4"><div><label class="block text-sm font-medium text-slate-700">Ciclo Real (s)</label><input type="number" name="real-cycle" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div><div><label class="block text-sm font-medium text-slate-700">Cavidades Reais</label><input type="number" name="real-cavities" required class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div><div><label class="block text-sm font-medium text-slate-700">Qtd. Produzida</label><input type="number" name="produced-qty" class="mt-1 block w-full p-2 border-slate-300 rounded-md shadow-sm"></div></div><div class="mt-6 flex justify-end gap-3"><button type="button" id="cancel-modal-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button><button type="submit" id="save-turno-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg">Salvar</button></div></form></div></div>
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm m-4 text-center"><div class="flex justify-center mb-4"><div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center"><i data-lucide="alert-triangle" class="w-8 h-8 text-yellow-500"></i></div></div><h3 class="text-lg font-bold">Tem a certeza?</h3><p id="confirm-modal-text" class="text-sm text-slate-600 my-2"></p><div class="mt-6 flex justify-center gap-3"><button id="confirm-modal-cancel-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-lg">Cancelar</button><button id="confirm-modal-ok-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Confirmar</button></div></div></div>
 
-    <script type="module">
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvJkKSJX7kma56u_tQdDlOP4HaDFqSE0_WZ6g-q7EkxdXfNK6O1b99z8ov8PoaMvwD/exec';
+    <script>
+        // --- SETUP -----------------------------------------------------------------
+        let scene, camera, renderer, controls;
+        let world, floorBody, baseBody, armBody, ballBody, stopBarBody;
+        let armMesh, ballMesh, stopBarMesh;
+        let objectsToUpdate = [];
+        let launchTime = 0, distanceMeasured = false;
         
-        const machineSelect = document.getElementById('machine');
-        const productSelect = document.getElementById('product');
-        const planningForm = document.getElementById('planning-form');
-        const planningList = document.getElementById('planning-list');
-        const launchPanel = document.getElementById('launch-panel');
-        const summaryTableBody = document.querySelector('#summary-table tbody');
-        const turnoModal = document.getElementById('turno-modal');
-        const turnoForm = document.getElementById('turno-form');
-        const dateSelector = document.getElementById('date-selector');
-        const printReportBtn = document.getElementById('print-report-btn');
-        const connectionStatus = document.getElementById('connection-status');
-        const refreshDataBtn = document.getElementById('refresh-data-btn');
-        const toastContainer = document.getElementById('toast-container');
-        const confirmModal = document.getElementById('confirm-modal');
-        const addItemBtn = document.getElementById('add-item-btn');
-        const saveTurnoBtn = document.getElementById('save-turno-btn');
+        // Materiais de Física
+        let floorMaterialPhysics, armMaterialPhysics, ballMaterialPhysics, stopBarMaterialPhysics;
 
-        let appData = { planning: [] };
-        let productsMaster = [];
-        let selectedDate = getProductionDateString();
-        
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('COLE_A_URL')) {
-                connectionStatus.textContent = 'A conectar ao Google Sheets...';
-                setupInitialUI();
-                await loadProductsMaster();
-                await loadData(selectedDate);
-                connectionStatus.textContent = 'Conectado';
-                connectionStatus.classList.replace('bg-slate-800', 'bg-green-600');
-            } else {
-                connectionStatus.textContent = 'URL do Google Apps Script não configurada!';
-                connectionStatus.classList.replace('bg-slate-800', 'bg-yellow-600');
-            }
-            lucide.createIcons();
-            setupEventListeners();
+        const distanceDisplay = document.getElementById('distance-display');
+
+        // Constantes de design
+        const armLength = 3.0;
+        const armHalfExtents = new CANNON.Vec3(0.125, 0.125, armLength / 2);
+        const ballRadius = 0.15;
+        const pivotHeight = 1.8;
+        const armPivotOffset = -armLength / 2 + 0.5;
+        const worldPivot = new CANNON.Vec3(0, pivotHeight, 0);
+        const pivotInArmSpace = new CANNON.Vec3(0, 0, armPivotOffset);
+
+        // Materiais (Cores)
+        const cardboardMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8b5a2b,
+            roughness: 0.8,
+            metalness: 0.1 
+        });
+        const floorMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x4b5563,
+            roughness: 0.5 
+        });
+        const ballMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x3b82f6,
+            roughness: 0.2,
+            metalness: 0.3
         });
 
-        function setupInitialUI() {
-            for (let i = 1; i <= 32; i++) {
-                const option = document.createElement('option');
-                option.value = `H-${String(i).padStart(2, '0')}`;
-                option.textContent = `H-${String(i).padStart(2, '0')}`;
-                machineSelect.appendChild(option);
-            }
-            dateSelector.value = selectedDate;
-        }
+        // Variáveis de controle (LSS)
+        let currentTension = 25;
+        let currentPullAngle = 70;
+        let currentStopAngle = 0;
+        let currentGravity = -9.8;
 
-        async function apiFetch(url, options = {}, elementsToOverlay = []) {
-            const elements = Array.isArray(elementsToOverlay) ? elementsToOverlay : [elementsToOverlay];
-            let isPost = options.body;
-            let btnToDisable = isPost ? (JSON.parse(options.body).item?.id ? saveTurnoBtn : addItemBtn) : refreshDataBtn;
+        // --- FUNÇÕES PRINCIPAIS ----------------------------------------------------
 
-            if (btnToDisable) btnToDisable.disabled = true;
-            if (!isPost && btnToDisable.querySelector('i')) btnToDisable.querySelector('i').classList.add('animate-spin');
-            elements.forEach(el => setLoadingOverlay(el, true));
+        function init() {
+            // Cena 3D (Three.js)
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(5, 5, 10);
 
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    let errorJson = {};
-                    try { errorJson = JSON.parse(errorText); } catch(e){}
-                    throw new Error(errorJson.error || `Falha na resposta da rede: ${response.statusText}`);
-                }
-                return await response.json();
-            } finally {
-                if (btnToDisable) btnToDisable.disabled = false;
-                if (!isPost && btnToDisable.querySelector('i')) setTimeout(() => btnToDisable.querySelector('i').classList.remove('animate-spin'), 500);
-                elements.forEach(el => setLoadingOverlay(el, false));
-            }
-        }
-        
-        async function loadProductsMaster() {
-            try {
-                productsMaster = await apiFetch(`${GOOGLE_SCRIPT_URL}?sheet=products_master`, {}, document.getElementById('planning-container'));
-                populateProductsDropdown();
-            } catch (error) {
-                console.error("Erro ao carregar catálogo:", error);
-                showToast(`Falha ao carregar catálogo: ${error.message}`, 'error');
-            }
-        }
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('simulation'), antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        async function loadData(date) {
-            try {
-                const elements = [document.getElementById('summary-container'), document.getElementById('launch-panel-container')];
-                appData.planning = await apiFetch(`${GOOGLE_SCRIPT_URL}?sheet=production_plan&date=${date}`, {}, elements);
-                renderAll();
-            } catch (error) {
-                console.error("ERRO AO CARREGAR DADOS:", error);
-                showToast(error.message || 'Falha ao carregar dados.', 'error');
-            }
-        }
+            // Controles de órbita
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.maxDistance = 100;
+            controls.minDistance = 2;
 
-        async function saveData(item) {
-            try {
-                await apiFetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'upsert', item }) }, document.getElementById('planning-container'));
-                showToast('Dados salvos com sucesso!', 'success');
-                await loadData(selectedDate);
-            } catch (error) {
-                console.error("ERRO AO SALVAR:", error);
-                showToast(error.message || 'Falha ao salvar!', 'error');
-            }
-        }
+            // Luzes
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
 
-        async function handleRemoveItem(id) {
-            try {
-                await apiFetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id }) }, document.getElementById('planning-container'));
-                showToast('Item removido.', 'info');
-                await loadData(selectedDate);
-            } catch (error) {
-                console.error("ERRO AO REMOVER:", error);
-                showToast(error.message || 'Falha ao remover.', 'error');
-            }
-        }
-        
-        function getProductionDateString() {
-            const now = new Date();
-            const currentHour = now.getHours();
-            if (currentHour < 7) {
-                const yesterday = new Date(now);
-                yesterday.setDate(now.getDate() - 1);
-                return yesterday.toISOString().split('T')[0];
-            }
-            return now.toISOString().split('T')[0];
-        }
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 7.5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
+            scene.add(directionalLight);
+            
+            // Mundo da Física (Cannon.js)
+            world = new CANNON.World();
+            world.gravity.set(0, currentGravity, 0);
+            world.broadphase = new CANNON.NaiveBroadphase();
+            world.solver.iterations = 10;
 
-        function showToast(message, type = 'info') {
-            const icons = { info: 'info', success: 'check-circle-2', warning: 'alert-triangle', error: 'alert-circle' };
-            const colors = { info: 'bg-blue-500', success: 'bg-green-500', warning: 'bg-yellow-500', error: 'bg-red-500' };
-            const toast = document.createElement('div');
-            toast.className = `toast flex items-center gap-3 text-white p-4 rounded-lg shadow-lg ${colors[type]}`;
-            toast.innerHTML = `<i data-lucide="${icons[type]}"></i><p>${message}</p>`;
-            toastContainer.appendChild(toast);
-            lucide.createIcons();
-            setTimeout(() => toast.remove(), 5000);
-        }
+            // Materiais de física
+            floorMaterialPhysics = new CANNON.Material("floor");
+            armMaterialPhysics = new CANNON.Material("arm");
+            ballMaterialPhysics = new CANNON.Material("ball");
+            stopBarMaterialPhysics = new CANNON.Material("stopBar");
 
-        function setLoadingOverlay(element, show) {
-            if (!element) return;
-            let overlay = element.querySelector('.loading-overlay');
-            if (show) {
-                if (!overlay) {
-                    overlay = document.createElement('div');
-                    overlay.className = 'loading-overlay';
-                    overlay.innerHTML = `<i data-lucide="loader-2" class="w-8 h-8 animate-spin text-cyan-600"></i>`;
-                    element.appendChild(overlay);
-                    lucide.createIcons();
-                }
-            } else if (overlay) {
-                overlay.remove();
-            }
-        }
-
-        function getSortedPlanning() {
-            return appData.planning.slice().sort((a, b) => parseInt(a.machine.split('-')[1]) - parseInt(b.machine.split('-')[1]));
-        }
-        
-        function populateProductsDropdown() {
-             productSelect.innerHTML = '<option value="" disabled selected>Selecione um produto...</option>';
-            productsMaster.forEach(p => {
-                if (p.product_name) {
-                    const option = document.createElement('option');
-                    option.value = p.product_name;
-                    option.textContent = p.product_name;
-                    productSelect.appendChild(option);
-                }
+            // Contatos entre materiais
+            const armStopContact = new CANNON.ContactMaterial(armMaterialPhysics, stopBarMaterialPhysics, {
+                friction: 0.1,
+                restitution: 0.0
             });
-        }
-        
-        function renderAll() {
-            renderPlanningList();
-            renderLaunchPanel();
-            renderSummaryTable();
+            world.addContactMaterial(armStopContact);
+
+            const armBallContact = new CANNON.ContactMaterial(armMaterialPhysics, ballMaterialPhysics, {
+                friction: 0.05,
+                restitution: 0.3
+            });
+            world.addContactMaterial(armBallContact);
+
+            const ballFloorContact = new CANNON.ContactMaterial(ballMaterialPhysics, floorMaterialPhysics, {
+                friction: 0.4,
+                restitution: 0.4
+            });
+            world.addContactMaterial(ballFloorContact);
+            
+            const ballStopContact = new CANNON.ContactMaterial(ballMaterialPhysics, stopBarMaterialPhysics, {
+                friction: 0.1,
+                restitution: 0.3
+            });
+            world.addContactMaterial(ballStopContact);
+
+            // Criar os objetos
+            createFloor();
+            createCatapult();
+            createProjectile();
+            
+            // Event Listeners dos Controles
+            setupEventListeners();
+
+            // Posição inicial
+            resetSimulation();
+            
+            // Iniciar loop de animação
+            animate();
         }
 
-        function renderPlanningList() {
-            planningList.innerHTML = '';
-            const sortedData = getSortedPlanning();
-            if (sortedData.length === 0) {
-                planningList.innerHTML = `<p class="text-slate-500 text-sm">Nenhum item planeado.</p>`;
-                return;
-            }
-            sortedData.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'flex justify-between items-center bg-slate-100 p-2 rounded';
-                div.innerHTML = `<div><span class="font-semibold">${item.machine}</span> - <span class="truncate">${item.product}</span></div>
-                                 <button class="remove-item-btn text-red-500 hover:text-red-700" data-id="${item.id}" data-product="${item.product}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
-                planningList.appendChild(div);
-            });
-            lucide.createIcons();
+        function createFloor() {
+            // Visual (Three.js)
+            const floorGeometry = new THREE.PlaneGeometry(100, 100);
+            const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+            floorMesh.rotation.x = -Math.PI / 2;
+            floorMesh.receiveShadow = true;
+            scene.add(floorMesh);
+
+            // Física (Cannon.js)
+            const floorShape = new CANNON.Plane();
+            floorBody = new CANNON.Body({ 
+                mass: 0,
+                material: floorMaterialPhysics
+            }); 
+            floorBody.addShape(floorShape);
+            floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+            world.addBody(floorBody);
         }
 
-        function renderLaunchPanel() {
-            launchPanel.innerHTML = '';
-            const sortedData = getSortedPlanning();
-             if (sortedData.length === 0) {
-                launchPanel.innerHTML = `<div class="col-span-full text-center text-slate-500"><p>Adicione itens no painel de planeamento.</p></div>`;
-                return;
-            }
-            sortedData.forEach(item => {
-                const card = document.createElement('div');
-                const turnos = item.turnos || {};
-                card.className = 'bg-slate-50 border border-slate-200 p-4 rounded-lg shadow';
-                const turnoBtnClass = (tData) => tData && tData.realCycle ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700';
-                const turnoIcon = (tData) => tData && tData.realCycle ? '<i data-lucide="check" class="w-4 h-4 mr-1"></i>' : '';
-                card.innerHTML = `<h4 class="font-bold text-lg">${item.machine}</h4>
-                                  <p class="text-slate-600 mb-3 truncate" title="${item.product}">${item.product}</p>
-                                  <div class="grid grid-cols-3 gap-2">
-                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['1'])}" data-id="${item.id}" data-turno="1">${turnoIcon(turnos['1'])} 1º Turno</button>
-                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['2'])}" data-id="${item.id}" data-turno="2">${turnoIcon(turnos['2'])} 2º Turno</button>
-                                      <button class="turno-btn text-white text-sm font-bold py-2 px-3 rounded transition-colors flex items-center justify-center ${turnoBtnClass(turnos['3'])}" data-id="${item.id}" data-turno="3">${turnoIcon(turnos['3'])} 3º Turno</button>
-                                  </div>`;
-                launchPanel.appendChild(card);
+        function createCatapult() {
+            const baseSize = { x: 2.0, y: 0.2, z: 2.5 }; 
+            const supportHeight = 2.0;
+            
+            // 1. Base (Visual e Física)
+            const baseMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(baseSize.x, baseSize.y, baseSize.z),
+                cardboardMaterial
+            );
+            baseMesh.position.y = baseSize.y / 2;
+            baseMesh.castShadow = true;
+            scene.add(baseMesh);
+
+            baseBody = new CANNON.Body({
+                mass: 0,
+                shape: new CANNON.Box(new CANNON.Vec3(baseSize.x / 2, baseSize.y / 2, baseSize.z / 2)),
+                position: new CANNON.Vec3(0, baseSize.y / 2, 0)
             });
-            lucide.createIcons();
+            world.addBody(baseBody);
+
+            // 2. Suportes (Apenas visual)
+            const supportGeom = new THREE.BoxGeometry(0.2, supportHeight, 0.2);
+            const support1 = new THREE.Mesh(supportGeom, cardboardMaterial);
+            support1.position.set(-0.8, supportHeight / 2 + baseSize.y, 0);
+            support1.castShadow = true;
+            scene.add(support1);
+
+            const support2 = new THREE.Mesh(supportGeom, cardboardMaterial);
+            support2.position.set(0.8, supportHeight / 2 + baseSize.y, 0);
+            support2.castShadow = true;
+            scene.add(support2);
+            
+            // 3. Braço de Lançamento (Visual)
+            armMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(armHalfExtents.x*2, armHalfExtents.y*2, armHalfExtents.z*2),
+                cardboardMaterial
+            );
+            armMesh.castShadow = true;
+            scene.add(armMesh);
+
+            // 3. Braço de Lançamento (Física)
+            const armShape = new CANNON.Box(armHalfExtents);
+            armBody = new CANNON.Body({ 
+                mass: 1, 
+                shape: armShape,
+                position: new CANNON.Vec3(0, 1.8, 1.0), 
+                material: armMaterialPhysics
+            });
+            world.addBody(armBody);
+
+            // 4. Pivô (Restrição de Dobradiça)
+            const hinge = new CANNON.HingeConstraint(baseBody, armBody, {
+                pivotA: worldPivot, 
+                pivotB: pivotInArmSpace, 
+                axisA: new CANNON.Vec3(1, 0, 0), 
+                axisB: new CANNON.Vec3(1, 0, 0)
+            });
+            world.add(hinge);
+
+            // 5. Barra de Parada (Visual)
+            stopBarMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(1.8, 0.2, 0.2),
+                cardboardMaterial
+            );
+            stopBarMesh.castShadow = true;
+            scene.add(stopBarMesh);
+
+            // 5. Barra de Parada (Física)
+            stopBarBody = new CANNON.Body({
+                mass: 0,
+                shape: new CANNON.Box(new CANNON.Vec3(0.9, 0.1, 0.1)),
+                material: stopBarMaterialPhysics
+            });
+            world.addBody(stopBarBody);
+            
+            // Adiciona braço à lista de atualização
+            objectsToUpdate.push({ mesh: armMesh, body: armBody });
+            objectsToUpdate.push({ mesh: stopBarMesh, body: stopBarBody });
         }
 
-        function getEfficiencyHtml(value) {
-            if (isNaN(value) || !isFinite(value)) return '<span>-</span>';
-            let colorClass = 'text-slate-800';
-            if (value < 85) { colorClass = 'text-red-600'; }
-            else if (value < 95) { colorClass = 'text-yellow-600'; }
-            else { colorClass = 'text-green-600'; }
-            return `<span class="${colorClass} font-bold">${value.toFixed(1)}%</span>`;
-        }
-        
-        function renderSummaryTable() {
-            summaryTableBody.innerHTML = '';
-            const sortedData = getSortedPlanning();
-            if (sortedData.length === 0) {
-                summaryTableBody.innerHTML = `<tr><td colspan="23" class="text-center p-4">Nenhum dado para exibir.</td></tr>`;
-                return;
-            }
-            sortedData.forEach(item => {
-                const row = document.createElement('tr');
-                const turnos = item.turnos || {};
-                row.className = 'bg-white border-b';
-                const totalQty = (turnos['1']?.qty || 0) + (turnos['2']?.qty || 0) + (turnos['3']?.qty || 0);
-                const cycleClass = (real, budget) => parseFloat(real) > parseFloat(budget) ? 'text-red-600 font-bold' : '';
-                let turnosHtml = '';
-                for (let i = 1; i <= 3; i++) {
-                    const turnoData = turnos[String(i)] || {};
-                    let machineEff = '-', moldEff = '-';
-                    if(turnoData.realCycle > 0 && item.budgeted_cycle > 0) machineEff = getEfficiencyHtml((item.budgeted_cycle / turnoData.realCycle) * 100);
-                    if(turnoData.realCavities > 0 && item.mold_cavities > 0) moldEff = getEfficiencyHtml((turnoData.realCavities / item.mold_cavities) * 100);
-                    turnosHtml += `<td class="${cycleClass(turnoData.realCycle, item.budgeted_cycle)}">${turnoData.realCycle || '-'}</td><td>${turnoData.realCavities || '-'}</td><td>${turnoData.qty || '-'}</td><td>${machineEff}</td><td>${moldEff}</td>`;
-                }
-                row.innerHTML = `<td>${item.machine}</td><td>${item.product}</td><td>${item.budgeted_cycle}</td><td>${item.mold_cavities}</td><td>${item.piece_weight}</td>${turnosHtml}<td class="font-bold bg-slate-100">${totalQty}</td><td>${item.machine}</td>`;
-                summaryTableBody.appendChild(row);
+        function createProjectile() {
+            // Visual (Three.js)
+            ballMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(ballRadius, 16, 16),
+                ballMaterial
+            );
+            ballMesh.castShadow = true;
+            scene.add(ballMesh);
+
+            // Física (Cannon.js)
+            const ballShape = new CANNON.Sphere(ballRadius);
+            ballBody = new CANNON.Body({ 
+                mass: 0.5, 
+                shape: ballShape,
+                material: ballMaterialPhysics
             });
+            world.addBody(ballBody);
+
+            // Adiciona bola à lista de atualização
+            objectsToUpdate.push({ mesh: ballMesh, body: ballBody });
         }
         
-        const openModal = (id, turno) => {
-            const item = appData.planning.find(p => p.id === id);
-            if (!item) return;
-            const turnos = item.turnos || {};
-            const turnoData = turnos[turno] || {};
-            turnoModal.querySelector('#modal-title').textContent = `Lançar ${turno}º Turno - ${item.machine}`;
-            turnoForm.elements['modal-item-id'].value = id;
-            turnoForm.elements['modal-turno'].value = turno;
-            turnoForm.elements['real-cycle'].value = turnoData.realCycle || '';
-            turnoForm.elements['real-cavities'].value = turnoData.realCavities || item.mold_cavities;
-            turnoForm.elements['produced-qty'].value = turnoData.qty || '';
-            turnoModal.classList.remove('hidden');
-        };
-        const closeModal = () => turnoModal.classList.add('hidden');
-        
-        let confirmCallback = null;
-        const showConfirm = (text, onConfirm) => {
-            confirmModal.querySelector('#confirm-modal-text').textContent = text;
-            confirmCallback = onConfirm;
-            confirmModal.classList.remove('hidden');
-        };
-        const hideConfirm = () => { confirmModal.classList.add('hidden'); confirmCallback = null; };
+        // --- CONTROLE E LÓGICA -----------------------------------------------------
 
         function setupEventListeners() {
-            productSelect.addEventListener('change', e => {
-                const p = productsMaster.find(p => p.product_name === e.target.value);
-                if (p) {
-                    planningForm.elements['budgeted-cycle'].value = p.budgeted_cycle || '';
-                    planningForm.elements['mold-cavities'].value = p.mold_cavities || '';
-                    planningForm.elements['piece-weight'].value = p.piece_weight || '';
-                }
+            // Sliders
+            document.getElementById('tension').addEventListener('input', e => {
+                currentTension = parseFloat(e.target.value);
+                document.getElementById('tension-value').textContent = currentTension;
+            });
+            document.getElementById('pullAngle').addEventListener('input', e => {
+                currentPullAngle = parseFloat(e.target.value);
+                document.getElementById('pullAngle-value').textContent = `${currentPullAngle}°`;
+                resetSimulation();
+            });
+            document.getElementById('stopAngle').addEventListener('input', e => {
+                currentStopAngle = parseFloat(e.target.value);
+                document.getElementById('stopAngle-value').textContent = `${currentStopAngle}°`;
+                resetSimulation();
+            });
+            document.getElementById('gravity').addEventListener('input', e => {
+                currentGravity = -parseFloat(e.target.value);
+                world.gravity.set(0, currentGravity, 0);
+                document.getElementById('gravity-value').textContent = currentGravity;
             });
 
-            planningForm.addEventListener('submit', async e => {
-                e.preventDefault();
-                const formData = new FormData(planningForm);
-                await saveData({
-                    date: selectedDate,
-                    machine: formData.get('machine'),
-                    product: formData.get('product'),
-                    budgeted_cycle: parseFloat(formData.get('budgeted-cycle')),
-                    mold_cavities: parseInt(formData.get('mold-cavities')),
-                    piece_weight: parseFloat(formData.get('piece-weight')),
-                    turnos: { '1': {}, '2': {}, '3': {} }
-                });
-                planningForm.reset();
-                planningForm.elements['product'].value = "";
-            });
-
-            turnoForm.addEventListener('submit', async e => {
-                e.preventDefault();
-                const id = turnoForm.elements['modal-item-id'].value;
-                const turno = turnoForm.elements['modal-turno'].value;
-                const item = appData.planning.find(p => p.id === id);
-                if (item) {
-                    if (!item.turnos) item.turnos = {};
-                    item.turnos[turno] = {
-                        realCycle: parseFloat(turnoForm.elements['real-cycle'].value),
-                        realCavities: parseInt(turnoForm.elements['real-cavities'].value),
-                        qty: turnoForm.elements['produced-qty'].value ? parseInt(turnoForm.elements['produced-qty'].value) : null
-                    };
-                    await saveData(item);
-                    closeModal();
-                }
-            });
-
-            dateSelector.addEventListener('change', e => { selectedDate = e.target.value; loadData(selectedDate); });
-            printReportBtn.addEventListener('click', () => {
-                document.getElementById('report-date').textContent = `Data: ${new Date(selectedDate + 'T00:00:00Z').toLocaleDateString('pt-BR')}`;
-                document.querySelector('.print-header').classList.remove('hidden');
-                window.print();
-                document.querySelector('.print-header').classList.add('hidden');
-            });
-            refreshDataBtn.addEventListener('click', () => loadData(selectedDate));
-            document.addEventListener('click', e => {
-                const removeBtn = e.target.closest('.remove-item-btn');
-                if (removeBtn) {
-                    showConfirm(`Deseja remover "${removeBtn.dataset.product}"?`, () => handleRemoveItem(removeBtn.dataset.id));
-                }
-                const turnoBtn = e.target.closest('.turno-btn');
-                if (turnoBtn) {
-                    openModal(turnoBtn.dataset.id, turnoBtn.dataset.turno);
-                }
-            });
-            [turnoModal.querySelector('#close-modal-btn'), turnoModal.querySelector('#cancel-modal-btn')].forEach(el => el.addEventListener('click', closeModal));
-            document.getElementById('confirm-modal-ok-btn').addEventListener('click', () => { if(confirmCallback) confirmCallback(); hideConfirm(); });
-            document.getElementById('confirm-modal-cancel-btn').addEventListener('click', hideConfirm);
+            // Botões
+            document.getElementById('launch-button').addEventListener('click', launch);
+            document.getElementById('reset-button').addEventListener('click', resetSimulation);
         }
-    </script>
-</body>
-</html>
 
+        function resetSimulation() {
+            distanceMeasured = false;
+            launchTime = 0;
+            distanceDisplay.textContent = "Distância (Y): 0.00 m";
+            distanceDisplay.style.color = "white";
+
+            // 1. Resetar Braço
+            armBody.velocity.set(0, 0, 0);
+            armBody.angularVelocity.set(0, 0, 0);
+            const pullAngleRad = (currentPullAngle * Math.PI) / 180;
+            armBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), pullAngleRad);
+            
+            const pivotInWorldSpace = armBody.quaternion.vmult(pivotInArmSpace);
+            const armPosition = worldPivot.vsub(pivotInWorldSpace);
+            armBody.position.copy(armPosition);
+
+            // 2. Resetar Barra de Parada
+            const stopAngleRad = (currentStopAngle * Math.PI) / 180;
+            const stopBarRadius = 1.0;
+            stopBarBody.position.set(
+                0,
+                worldPivot.y + Math.sin(stopAngleRad) * stopBarRadius,
+                worldPivot.z + Math.cos(stopAngleRad) * stopBarRadius
+            );
+            stopBarBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), stopAngleRad);
+
+            // 3. Resetar Bola
+            ballBody.velocity.set(0, 0, 0);
+            ballBody.angularVelocity.set(0, 0, 0);
+
+            const ballOnArmSpace = new CANNON.Vec3(
+                0, 
+                armHalfExtents.y + ballRadius,
+                armHalfExtents.z - 0.2
+            );
+            const ballFinalWorldPos = armBody.pointToWorldFrame(ballOnArmSpace);
+            ballBody.position.copy(ballFinalWorldPos);
+            
+            updatePhysics();
+        }
+
+        function launch() {
+            if (launchTime > 0) return;
+
+            launchTime = Date.now();
+            distanceMeasured = false;
+
+            // Acorda os corpos para garantir que a física seja aplicada
+            armBody.wakeUp();
+            ballBody.wakeUp();
+
+            // Aplica um impulso angular no braço baseado na tensão
+            const impulse = currentTension * 0.1; // Ajuste do multiplicador
+            armBody.applyLocalImpulse(new CANNON.Vec3(0, 0, impulse), new CANNON.Vec3(0, 0, armHalfExtents.z));
+        }
+
+        function updatePhysics() {
+            // Atualiza a física
+            world.step(1/60);
+            
+            // Atualiza os objetos 3D baseado na física
+            for (const obj of objectsToUpdate) {
+                obj.mesh.position.copy(obj.body.position);
+                obj.mesh.quaternion.copy(obj.body.quaternion);
+            }
+            
+            // Mede a distância se a bola foi lançada
+            if (launchTime > 0 && !distanceMeasured) {
+                // Verifica se a bola está se movendo lentamente (parou)
+                const speed = ballBody.velocity.length();
+                if (speed < 0.1 && ballBody.position.y < ballRadius + 0.1) {
+                    const distance = Math.abs(ballBody.position.z);
+                    distanceDisplay.textContent = `Distância (Y): ${distance.toFixed(2)} m`;
+                    distanceDisplay.style.color = "#3b82f6";
+                    distanceMeasured = true;
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            updatePhysics();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Inicializa a simulação quando a página carrega
+        window.addEventListener('load', init);
+        
+        // Redimensiona o canvas quando a janela é 
