@@ -1,0 +1,46 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "DEPLOY.md",
+      "FINAL-DELIVERY.md",
+      "IMPLEMENTATION-GUIDE.md",
+      "MAP.md",
+      "PROJECT-STRUCTURE.md",
+      "QUICK-START.md",
+      "README.md",
+      "SUMMARY.md",
+      "TESTING.md",
+      "STATUS-E-PLANO-FIREBASE.md",
+      "firestore.rules",
+      ".firebaserc"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

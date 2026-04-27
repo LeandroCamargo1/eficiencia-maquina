@@ -1,0 +1,469 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="AppBJJ Kids - Plataforma de Treinamento de BJJ para Crianças">
+    <title>AppBJJ Kids - Seu Treinamento de BJJ</title>
+
+    <!-- Manifest para PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥋</text></svg>">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-enhanced.css">
+
+    <!-- Firebase SDK (versão compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <!-- face-api.js — Reconhecimento Facial (vladmandic fork, mantido ativamente) -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/dist/face-api.js"></script>
+</head>
+<body>
+    <div class="theme-wrapper" data-theme="dark">
+        <!-- ========== LOADING SCREEN ========== -->
+        <div id="loading-screen" class="screen screen-full screen-loading">
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <h1 class="loading-title">AppBJJ Kids</h1>
+                <p class="loading-text">Carregando seu treinamento...</p>
+            </div>
+        </div>
+
+        <!-- ========== LOGIN SCREEN ========== -->
+        <div id="login-screen" class="screen screen-full screen-login hidden">
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h1 class="login-title">🥋 AppBJJ Kids</h1>
+                        <p class="login-subtitle">Seu treinamento de BJJ na palma da mão</p>
+                    </div>
+
+                    <div class="login-body">
+                        <p class="login-description">Faça login com sua conta Google para começar</p>
+
+                        <button id="btn-google-login" class="btn btn-primary btn-lg">
+                            <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                            Entrar com Google
+                        </button>
+
+                        <p class="login-note">Sua privacidade é importante. Seus dados são armazenados de forma segura.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== APP CONTENT ========== -->
+        <div id="app-content" class="app-content hidden">
+            <!-- Header/Navbar -->
+            <header class="app-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <button id="btn-open-sidebar" class="btn-icon btn-hamburger" aria-label="Abrir menu" title="Menu">☰</button>
+                        <h1 class="app-title">AppBJJ</h1>
+                    </div>
+                    <div class="header-right">
+                        <button id="btn-install-app" class="btn btn-small btn-install hidden" title="Instalar app" aria-label="Instalar AppBJJ">
+                            ⬇️ Instalar
+                        </button>
+                        <button id="theme-toggle" class="btn-icon">
+                            <span class="icon-sun">🌙</span>
+                        </button>
+                        <button id="profile-menu-toggle" class="btn-icon" title="Menu">
+                            <div id="profile-avatar" class="profile-avatar">👤</div>
+                        </button>
+                    </div>
+                </div>
+
+
+            </header>
+
+            <!-- Main Content -->
+            <main class="app-main">
+
+                <!-- ALUNO DASHBOARD -->
+                <div id="student-dashboard" class="dashboard hidden">
+                    <div class="dashboard-content">
+                        <nav class="app-module-menu" aria-label="Módulos do aluno">
+                            <button class="module-tab is-active" type="button" data-module-target="section-belt">🥋 Visão Geral</button>
+                            <button class="module-tab" type="button" data-module-target="section-positions">🎯 Posições</button>
+                            <button class="module-tab" type="button" data-module-target="section-face-enroll">🤖 Facial</button>
+                            <button class="module-tab" type="button" data-module-target="section-profiles">👤 Perfis</button>
+                        </nav>
+
+                        <!-- Seção de Faixa -->
+                        <section id="section-belt" class="section section-belt">
+                            <div id="belt-visual" class="belt-visual"></div>
+                            <div class="belt-info">
+                                <h2 id="belt-title" class="belt-title">Faixa Branca</h2>
+                                <p id="belt-grade" class="belt-grade">Grau 0/4</p>
+                            </div>
+                        </section>
+
+                        <!-- Progresso -->
+                        <section id="section-progress" class="section section-progress">
+                            <div class="progress-header">
+                                <h3>Progresso para Próxima Faixa</h3>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                            </div>
+                            <p id="progress-text" class="progress-text">0/10 aulas</p>
+                        </section>
+
+                        <!-- Stats -->
+                        <section id="section-stats" class="section section-stats">
+                            <h3>Estatísticas</h3>
+                            <div id="stats-container" class="stats-container"></div>
+                        </section>
+
+                        <!-- Seção de Check-in -->
+                        <section id="section-checkin" class="section section-checkin">
+                            <h3>Check-in</h3>
+                            <p class="section-description">Solicite um check-in para validar sua presença na aula</p>
+                            <button id="btn-request-checkin" class="btn btn-primary">
+                                ✋ Solicitar Check-in
+                            </button>
+                        </section>
+
+                        <!-- Seção de Reconhecimento Facial (Aluno) -->
+                        <section id="section-face-enroll" class="section section-face-enroll">
+                            <h3>🤖 Reconhecimento Facial</h3>
+                            <p class="section-description">Cadastre seu rosto para que o professor possa fazer seu check-in automaticamente pela foto da aula.</p>
+                            <p class="face-quality-guide">Dica: use foto frontal, com boa luz e apenas 1 rosto na imagem.</p>
+
+                            <div id="face-enroll-status" class="face-status face-status--none">
+                                <span id="face-status-icon">📷</span>
+                                <span id="face-status-text">Rosto não cadastrado</span>
+                            </div>
+
+                            <div id="face-enroll-quality" class="face-quality-status hidden" aria-live="polite"></div>
+
+                            <div class="face-enroll-actions">
+                                <label for="input-face-photo" class="btn btn-secondary" id="btn-upload-face">
+                                    📁 Escolher Foto
+                                </label>
+                                <input type="file" id="input-face-photo" accept="image/*" capture="user" class="hidden-file-input">
+                            </div>
+
+                            <div id="face-enroll-preview" class="face-preview hidden">
+                                <img id="face-preview-img" class="face-preview-img" alt="Preview do rosto">
+                                <div class="face-preview-actions">
+                                    <p class="face-consent-text">⚠️ Ao confirmar, você autoriza o uso desta imagem exclusivamente para check-in automático nas aulas de BJJ, conforme a LGPD.</p>
+                                    <label class="face-consent-label">
+                                        <input type="checkbox" id="face-consent-check">
+                                        Concordo com o uso do meu rosto para check-in
+                                    </label>
+                                    <div class="face-preview-btns">
+                                        <button id="btn-cancel-face-enroll" class="btn btn-secondary">Cancelar</button>
+                                        <button id="btn-confirm-face-enroll" class="btn btn-primary" disabled>✓ Cadastrar Rosto</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="section-positions" class="section section-positions hidden">
+                            <div class="positions-header">
+                                <h3>Fixação de Posições</h3>
+                                <p class="section-description">Treine as posições aprendidas na aula e desbloqueie recompensas.</p>
+                            </div>
+
+                            <div class="positions-summary">
+                                <div class="stat-card">
+                                    <div class="stat-icon">✅</div>
+                                    <div id="positions-mastered-count" class="stat-value">0</div>
+                                    <div class="stat-label">Dominadas</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">🧠</div>
+                                    <div id="positions-practicing-count" class="stat-value">0</div>
+                                    <div class="stat-label">Em prática</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">🏆</div>
+                                    <div id="positions-reward-count" class="stat-value">0</div>
+                                    <div class="stat-label">Recompensas</div>
+                                </div>
+                            </div>
+
+                            <div class="positions-progress-wrap">
+                                <div class="progress-bar">
+                                    <div id="positions-progress-bar-fill" class="progress-bar-fill"></div>
+                                </div>
+                                <p id="positions-progress-text" class="progress-text">0% concluído</p>
+                            </div>
+
+                            <div id="positions-groups" class="positions-groups"></div>
+
+                            <div class="positions-rewards">
+                                <h4>Recompensas</h4>
+                                <div id="positions-rewards-grid" class="badges-grid"></div>
+                            </div>
+                        </section>
+
+                        <!-- Perfis -->
+                        <section id="section-profiles" class="section section-profiles">
+                            <div class="profiles-header">
+                                <h3>Meus Perfis</h3>
+                                <button id="btn-add-profile" class="btn btn-small">+ Novo</button>
+                            </div>
+                            <div id="profile-list" class="profile-list"></div>
+                        </section>
+
+                        <!-- Modal Novo Perfil -->
+                        <div id="modal-new-profile" class="modal hidden">
+                            <div class="modal-content modal-compact">
+                                <div class="modal-header">
+                                    <h2>Novo Perfil</h2>
+                                    <button class="btn-close" data-dismiss="modal">✕</button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="text" id="input-profile-name" placeholder="Nome da criança" class="input">
+                                    <input type="number" id="input-profile-age" placeholder="Idade (4-18)" min="4" max="18" class="input">
+                                </div>
+                                <div class="modal-footer">
+                                    <button id="btn-cancel-profile" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                    <button id="btn-save-profile" class="btn btn-primary">Criar Perfil</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROFESSOR DASHBOARD -->
+                <div id="teacher-dashboard" class="dashboard hidden">
+                    <div class="dashboard-content">
+                        <nav class="app-module-menu" aria-label="Módulos do professor">
+                            <button class="module-tab is-active" type="button" data-teacher-module-target="section-teacher-requests">📥 Solicitações</button>
+                            <button class="module-tab" type="button" data-teacher-module-target="section-face-checkin">📸 Facial</button>
+                            <button class="module-tab" type="button" data-teacher-module-target="section-teacher-stats">📊 Turma</button>
+                        </nav>
+
+                        <!-- Seção de Solicitações Pendentes -->
+                        <section id="section-teacher-requests" class="section section-requests">
+                            <h3>Solicitações de Check-in Pendentes</h3>
+                            <div id="requests-container" class="requests-container"></div>
+                        </section>
+
+                        <!-- Check-in por Foto da Aula (Professor) -->
+                        <section id="section-face-checkin" class="section section-face-checkin">
+                            <h3>📸 Check-in por Foto da Aula</h3>
+                            <p class="section-description">Suba a foto do treino. O sistema identificará automaticamente os alunos presentes.</p>
+
+                            <div class="face-upload-area" id="face-upload-area">
+                                <div class="face-upload-icon">📷</div>
+                                <p class="face-upload-label">Clique ou arraste a foto aqui</p>
+                                <p class="face-upload-hint">Foto deve conter os rostos dos alunos visíveis</p>
+                                <input type="file" id="input-training-photo" accept="image/*" class="hidden-file-input">
+                            </div>
+
+                            <div id="face-processing" class="face-processing hidden">
+                                <div class="face-processing-spinner"></div>
+                                <p>Detectando rostos...</p>
+                            </div>
+
+                            <!-- Status de erro/aviso da última análise -->
+                            <div id="face-section-status" class="face-section-status hidden"></div>
+                        </section>
+
+                        <!-- Estatísticas do Professor -->
+                        <section id="section-teacher-stats" class="section section-teacher-stats">
+                            <h3>Estatísticas da Turma</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-icon">👨‍🎓</div>
+                                    <div class="stat-value" id="stat-total-students">0</div>
+                                    <div class="stat-label">Alunos Vinculados</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">✅</div>
+                                    <div class="stat-value" id="stat-approved-today">0</div>
+                                    <div class="stat-label">Check-ins Aprovados Hoje</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Message Container -->
+            <div id="message-container" class="message-container"></div>
+
+            <!-- ===== SIDEBAR OVERLAY ===== -->
+            <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+            <!-- ===== SIDEBAR / HAMBURGER MENU ===== -->
+            <aside id="app-sidebar" class="app-sidebar" role="navigation" aria-label="Menu principal">
+                <div class="sidebar-header">
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-avatar" id="sidebar-avatar">👤</div>
+                        <div class="sidebar-user-text">
+                            <p class="sidebar-user-name" id="sidebar-user-name">Usuário</p>
+                            <p class="sidebar-user-email" id="sidebar-user-email">email@example.com</p>
+                        </div>
+                    </div>
+                    <button id="btn-close-sidebar" class="btn-icon" aria-label="Fechar menu">✕</button>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <!-- Aluno -->
+                    <div id="sidebar-nav-student" class="sidebar-nav-group">
+                        <p class="sidebar-nav-label">Aluno</p>
+                        <button class="sidebar-nav-item is-active" type="button" data-module-target="section-belt">🥋 Visão Geral</button>
+                        <button class="sidebar-nav-item" type="button" data-module-target="section-positions">🎯 Posições</button>
+                        <button class="sidebar-nav-item" type="button" data-module-target="section-face-enroll">🤖 Facial</button>
+                        <button class="sidebar-nav-item" type="button" data-module-target="section-profiles">👤 Perfis</button>
+                    </div>
+                    <!-- Professor -->
+                    <div id="sidebar-nav-teacher" class="sidebar-nav-group hidden">
+                        <p class="sidebar-nav-label">Professor</p>
+                        <button class="sidebar-nav-item is-active" type="button" data-teacher-module-target="section-teacher-requests">📥 Solicitações</button>
+                        <button class="sidebar-nav-item" type="button" data-teacher-module-target="section-face-checkin">📸 Facial</button>
+                        <button class="sidebar-nav-item" type="button" data-teacher-module-target="section-teacher-stats">📊 Turma</button>
+                    </div>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <a href="#" id="sidebar-item-teacher" class="sidebar-footer-item hidden">👨‍🏫 Modo Professor</a>
+                    <a href="#" id="sidebar-item-student" class="sidebar-footer-item hidden">👨‍🎓 Modo Aluno</a>
+                    <hr class="sidebar-divider">
+                    <button id="btn-logout" class="sidebar-footer-item sidebar-logout">🚪 Sair</button>
+                </div>
+            </aside>
+
+            <!-- ===== MODAL: Resultados do Reconhecimento Facial ===== -->
+            <div id="modal-face-results" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="face-results-title">
+                <div class="modal-content modal-face-results">
+                    <div class="modal-header">
+                        <h2 id="face-results-title">📸 Resultado do Reconhecimento</h2>
+                        <button class="btn-close" id="btn-close-face-results" aria-label="Fechar">✕</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Foto com canvas sobreposto -->
+                        <div class="face-result-image-wrap">
+                            <img id="face-result-img" class="face-result-img" alt="Foto da aula">
+                            <canvas id="face-result-canvas" class="face-result-canvas"></canvas>
+                        </div>
+
+                        <!-- Barra de resumo (preenchida por JS) -->
+                        <div id="face-result-summary" class="face-result-summary"></div>
+
+                        <!-- Avisos de baixa confiança -->
+                        <div id="face-result-warnings" class="face-result-warnings hidden"></div>
+
+                        <!-- Listas + controles -->
+                        <div class="face-result-lists">
+                            <div class="face-result-controls">
+                                <button id="btn-select-all-faces" class="btn btn-small btn-secondary" type="button">✅ Marcar todos</button>
+                                <button id="btn-deselect-all-faces" class="btn btn-small btn-secondary" type="button">⬜ Desmarcar todos</button>
+                            </div>
+
+                            <div class="face-result-group">
+                                <h4 class="face-result-group-title face-result-recognized">✅ Identificados</h4>
+                                <ul id="face-recognized-list" class="face-checkin-list"></ul>
+                            </div>
+
+                            <div class="face-result-group">
+                                <h4 class="face-result-group-title face-result-unknown">❓ Não identificados</h4>
+                                <ul id="face-unknown-list" class="face-checkin-list face-unknown-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button id="btn-cancel-face-checkin" class="btn btn-secondary">Cancelar</button>
+                        <button id="btn-confirm-face-checkin" class="btn btn-primary" disabled>✓ Confirmar Check-ins</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Core State Management -->
+    <script src="state-manager.js"></script>
+    <script src="role-manager.js"></script>
+    <script src="firestore-service.js"></script>
+    <script src="checkin-manager.js"></script>
+
+    <!-- Reconhecimento Facial -->
+    <script src="face-recognition.js"></script>
+
+    <!-- App Logic -->
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            // Guarda para evitar loop infinito de reload
+            let swRefreshing = false;
+
+            navigator.serviceWorker.register('sw.js').then((reg) => {
+                // Nova versão do SW encontrada durante a sessão
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                            if (!swRefreshing) { swRefreshing = true; window.location.reload(); }
+                        }
+                    });
+                });
+            }).catch(err => {
+                console.warn('SW registration failed:', err);
+            });
+
+            // Novo SW assumiu controle (skipWaiting já chamado)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!swRefreshing) { swRefreshing = true; window.location.reload(); }
+            });
+        }
+    </script>
+
+    <!-- Init -->
+    <script>
+        // PWA Install prompt
+        let _installPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            _installPrompt = e;
+            const btn = document.getElementById('btn-install-app');
+            if (btn) btn.classList.remove('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            _installPrompt = null;
+            const btn = document.getElementById('btn-install-app');
+            if (btn) btn.classList.add('hidden');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            loadTheme();
+            initFaceRecognitionUI();
+
+            document.getElementById('btn-install-app')?.addEventListener('click', async () => {
+                if (!_installPrompt) return;
+                _installPrompt.prompt();
+                const { outcome } = await _installPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    _installPrompt = null;
+                    document.getElementById('btn-install-app')?.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

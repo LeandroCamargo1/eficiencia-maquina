@@ -1,0 +1,47 @@
+{
+  "name": "AppBJJ Kids - Acompanhamento de Jiu-Jitsu Infantil",
+  "short_name": "AppBJJ Kids",
+  "description": "Aplicativo para acompanhar o progresso em Jiu-Jitsu infantil com faixas, graus, estatísticas e conquistas.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0d0d0f",
+  "theme_color": "#e53935",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%230d0d0f' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23e53935'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230d0d0f' width='512' height='512'/><circle cx='256' cy='256' r='160' fill='%23e53935'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%230d0d0f' width='540' height='720'/></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["sports", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Check-in rápido",
+      "short_name": "Check-in",
+      "description": "Registrar presença na aula",
+      "url": "/index.html#checkin",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><circle cx='48' cy='48' r='45' fill='%23e53935'/><text x='48' y='60' font-size='48' fill='white' text-anchor='middle'>✓</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
