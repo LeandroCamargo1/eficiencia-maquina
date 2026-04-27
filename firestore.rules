@@ -24,8 +24,9 @@ service cloud.firestore {
       match /checkinRequests/{requestId} {
         // Professor gerencia suas próprias solicitações
         allow read, write: if request.auth != null && request.auth.uid == userId;
-        // Qualquer aluno autenticado pode criar solicitação para um professor
-        allow create: if request.auth != null;
+        // Aluno autenticado vinculado ao professor pode criar solicitação
+        allow create: if request.auth != null
+          && request.resource.data.studentId == request.auth.uid;
       }
     }
 

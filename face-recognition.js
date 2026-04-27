@@ -166,8 +166,9 @@ const FaceRecognition = {
 
             const resized = faceapi.resizeResults({ box: r.box }, dims);
             const color = r.recognized ? '#00c853' : '#ff5252';
+            const confidence = Math.round((1 - r.distance) * 100);
             const label = r.recognized
-                ? `${r.studentName} (${(1 - r.distance).toFixed(0) * 100 | ((1 - r.distance) * 100).toFixed(0)}%)`
+                ? `${r.studentName} (${confidence}%)`
                 : 'Desconhecido';
 
             // Desenhar retângulo

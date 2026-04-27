@@ -131,7 +131,8 @@ const CheckinManager = {
         if (!user) return false;
 
         try {
-            const profile = StateManager.getProfiles().find(p => p.id === profileId);
+            const profiles = StateManager.getProfiles();
+            const profile = profiles.find(p => p.id === profileId);
             if (!profile) return false;
 
             // Atualizar contador local
@@ -170,8 +171,8 @@ const CheckinManager = {
             // Registrar check-in no histórico
             await FirestoreService.recordCheckin(user.uid, profileId, date);
 
-            // Atualizar estado local
-            StateManager.setProfiles(StateManager.getProfiles());
+            // Atualizar estado local com o array modificado
+            StateManager.setProfiles(profiles);
 
             return true;
         } catch (error) {
@@ -184,14 +185,15 @@ const CheckinManager = {
      * Calcular streak (dias seguidos)
      */
     _calculateStreak(profile) {
-        if (!profile.lastCheckinDate) return 0;
+        if (!profile.lastCheckinDate) return 1;
 
         const lastDate = new Date(profile.lastCheckinDate);
         const today = new Date();
         const daysDiff = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
 
         if (daysDiff === 0) {
-            return (profile.streak || 0) + 1;
+            // Mesmo dia — manter streak atual (sem incrementar)
+            return profile.streak || 1;
         } else if (daysDiff === 1) {
             return (profile.streak || 0) + 1;
         } else {

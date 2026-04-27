@@ -304,8 +304,8 @@ function renderProfiles() {
 
     profileList.innerHTML = profiles.map((p) => `
         <div class="profile-item ${p.id === current?.id ? 'active' : ''}">
-            <button class="profile-name" data-profile-id="${p.id}">${p.name} (${p.age} anos)</button>
-            <button class="profile-delete" data-profile-id="${p.id}" aria-label="Excluir ${p.name}">✕</button>
+            <button class="profile-name" data-profile-id="${_escHtml(p.id)}">${_escHtml(p.name)} (${Number(p.age) || 0} anos)</button>
+            <button class="profile-delete" data-profile-id="${_escHtml(p.id)}" aria-label="Excluir ${_escHtml(p.name)}">✕</button>
         </div>
     `).join('');
 
@@ -691,12 +691,12 @@ function renderCheckingRequests(requests) {
     container.innerHTML = requests.map((req) => `
         <div class="request-card">
             <div class="request-info">
-                <div class="request-name">${req.studentName || 'Aluno'}</div>
-                <div class="request-age">${req.studentAge ? req.studentAge + ' anos' : ''}</div>
+                <div class="request-name">${_escHtml(req.studentName) || 'Aluno'}</div>
+                <div class="request-age">${req.studentAge ? Number(req.studentAge) + ' anos' : ''}</div>
             </div>
             <div class="request-actions">
-                <button class="btn btn-primary" data-action="approve" data-request-id="${req.id}" data-student-id="${req.studentId}" data-profile-id="${req.profileId}">Aprovar</button>
-                <button class="btn btn-secondary" data-action="reject" data-request-id="${req.id}">Rejeitar</button>
+                <button class="btn btn-primary" data-action="approve" data-request-id="${_escHtml(req.id)}" data-student-id="${_escHtml(req.studentId)}" data-profile-id="${_escHtml(req.profileId)}">Aprovar</button>
+                <button class="btn btn-secondary" data-action="reject" data-request-id="${_escHtml(req.id)}">Rejeitar</button>
             </div>
         </div>
     `).join('');
@@ -757,7 +757,7 @@ async function renderTeacherDashboard() {
     updateTeacherStats();
 }
 
-async function requestChecinToday() {
+async function requestCheckinToday() {
     if (RoleManager.isTeacher()) {
         showMessage('Professores não podem solicitar check-in', 'warning');
         return false;
@@ -796,9 +796,7 @@ async function requestChecinToday() {
     return CheckinManager.requestCheckin(new Date());
 }
 
-async function requestCheckinToday() {
-    return requestChecinToday();
-}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     loadTheme();
@@ -817,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-request-checkin')?.addEventListener('click', async () => {
-        await requestChecinToday();
+        await requestCheckinToday();
         renderUI();
     });
 });
@@ -1136,10 +1134,12 @@ async function _handleTrainingPhoto(file, processingEl) {
                         <p class="face-status-title">Não foi possível processar a foto</p>
                         <p class="face-status-desc">Verifique se: os rostos estão visíveis e bem iluminados, os alunos cadastraram o rosto no app e a foto tem tamanho adequado (max 10 MB).</p>
                     </div>
-                    <button class="btn btn-small btn-secondary face-status-close"
-                        onclick="document.getElementById('face-section-status').classList.add('hidden')">✕</button>
+                    <button class="btn btn-small btn-secondary face-status-close" id="btn-dismiss-face-error">✕</button>
                 </div>
             `;
+            document.getElementById('btn-dismiss-face-error')?.addEventListener('click', () => {
+                document.getElementById('face-section-status')?.classList.add('hidden');
+            });
         }
         return;
     }

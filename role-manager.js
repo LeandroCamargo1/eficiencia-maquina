@@ -69,50 +69,36 @@ const RoleManager = {
 
     async linkStudentToTeacher(studentUserId, teacherUserId) {
         try {
-            // Verificar se o professor existe antes de vincular
-            const teacherDoc = await db.collection('users').doc(teacherUserId).get();
-            if (!teacherDoc.exists) {
-                showMessage('Professor não encontrado. Verifique o UID informado.', 'warning');
-                throw new Error('Teacher not found');
-            }
-
             // Aluno: salvar linkedTeacherId no próprio doc (permitido pelas regras)
+            // Não é possível verificar existência do professor do client (sem permissão de leitura)
             await db.collection('users').doc(studentUserId).set(
                 { linkedTeacherId: teacherUserId },
                 { merge: true }
             );
 
-            // Atualizar estado local
-            StateManager.setLinkedTeacher({ id: teacherUserId, ...teacherDoc.data() });
+            // Atualizar estado local (sem dados do professor, pois não temos acesso)
+            StateManager.setLinkedTeacher({ id: teacherUserId });
 
             showMessage('Vinculado ao professor com sucesso!', 'success');
         } catch (error) {
-            if (error.message !== 'Teacher not found') {
-                console.error('Erro ao vincular aluno:', error);
-                showMessage('Erro ao vincular com professor', 'warning');
-            }
+            console.error('Erro ao vincular aluno:', error);
+            showMessage('Erro ao vincular com professor', 'warning');
             throw error;
         }
     },
 
     async unlinkStudentFromTeacher(studentUserId, teacherUserId) {
         try {
-            // Aluno: remover linkedTeacherId
+            // Aluno: remover linkedTeacherId do próprio doc
             await db.collection('users').doc(studentUserId).set(
                 { linkedTeacherId: null },
                 { merge: true }
             );
 
-            // Professor: remover de linkedStudentIds
-            const teacherDoc = await db.collection('users').doc(teacherUserId).get();
-            let linkedStudentIds = teacherDoc.data()?.linkedStudentIds || [];
-            linkedStudentIds = linkedStudentIds.filter(id => id !== studentUserId);
-            
-            await db.collection('users').doc(teacherUserId).set(
-                { linkedStudentIds },
-                { merge: true }
-            );
+            // Não modificar doc do professor (aluno não tem permissão)
+            // O professor pode limpar linkedStudentIds por conta própria
 
+            StateManager.setLinkedTeacher(null);
             showMessage('Aluno desvinculado', 'info');
         } catch (error) {
             console.error('Erro ao desvincular aluno:', error);
